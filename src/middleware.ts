@@ -1,33 +1,59 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
 
-const PUBLIC_PATHS = ['/login', '/api/auth/callback'];
+const PUBLIC_PATHS = ['/login', '/api/auth/callback']
 
-export function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
 
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
-    return NextResponse.next();
+    return NextResponse.next()
   }
 
-  const hasSession =
-    req.cookies.get('sb-access-token') || req.cookies.get('sb-refresh-token');
+  let supabaseResponse = NextResponse.next({
+    request,
+  })
 
-  if (!hasSession) {
-    const url = req.nextUrl.clone();
-    url.pathname = '/login';
-
-    const from = pathname || '/';
-    if (from !== '/') {
-      url.searchParams.set('redirectTo', from);
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+          supabaseResponse = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
     }
+  )
 
-    return NextResponse.redirect(url);
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  if (!session) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/login'
+    
+    const from = pathname || '/'
+    if (from !== '/') {
+      url.searchParams.set('redirectTo', from)
+    }
+    
+    return NextResponse.redirect(url)
   }
 
-  return NextResponse.next();
+  return supabaseResponse
 }
 
 export const config = {
   matcher: ['/', '/reservar', '/admin'],
-};
+}
