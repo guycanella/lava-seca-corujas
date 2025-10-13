@@ -1,7 +1,10 @@
-export default function ReservarPage() {
+import Link from "next/link";
+
+export default function ReservarHome() {
   return (
-    <main>
-      <h1>Reservar</h1>
-    </main>
+    <div>
+      <Link href="/reservar/lavadora">Reservar máquina de lavar</Link>
+      <Link href="/reservar/secadora">Reservar secadora</Link>
+    </div>
   );
 }
