@@ -1,12 +1,9 @@
 "use client"
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LockIcon, Loader2Icon } from "lucide-react";
-import { supabaseBrowser } from "@/lib/supabaseClient";
-import { z } from "zod";
 
 import {
     Form,
@@ -25,73 +22,84 @@ import {
 } from "../ui/input-group";
 
 import { Input } from "../ui/input";
+import { formSchema, FormValues, PayloadLoginType } from "@/types";
+import { toast } from "sonner";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-const formSchema = z.object({
-  email: z.email({ message: "É necessário inserir um email válido" }),
-  password: z.string().min(8, { message: "Informe sua senha" }),
-});
+async function login(payload: PayloadLoginType) {
+    const res = await fetch("/api/auth/login", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
 
-type FormValues = z.infer<typeof formSchema>;
+    const json = await res.json();
 
-const LoginForm = () => {
-    const [loading, setLoading] = useState(false);
-    const [authError, setAuthError] = useState<string | null>(null);
-    const router = useRouter();
-    const searchParams = useSearchParams();
+    if (!res.ok) {
+        const msg = json?.error || "Erro ao fazer login";
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
-
-  const onSubmit = async (values: FormValues) => {
-    setAuthError(null);
-    setLoading(true);
-
-    try {
-        const supabase = supabaseBrowser();
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email: values.email,
-            password: values.password,
-        });
-
-        console.log({ data });
-
-        if (error) {
-            console.error(error);
-            setAuthError("E-mail ou senha inválidos.");
-            return;
+        if (msg.toLowerCase().includes("invalid")) {
+            throw new Error("E-mail ou senha inválidos.");
         }
 
-        const redirectTo = searchParams.get("redirectTo") || "/reservar";
-        console.log('redirecting to:', redirectTo);
-        router.replace(redirectTo);
-    } catch(error) {
-        console.error(error);
-        setAuthError("Falha inesperada ao tentar autenticar. Tente novamente.");
-    } finally {
-        setLoading(false);
+        throw new Error(msg);
     }
+
+    return json;
+}
+
+const LoginForm = () => {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const queryClient = useQueryClient();
+
+    const { mutate: loginMutation, isPending } = useMutation({
+        mutationFn: (payload: PayloadLoginType) => login(payload),
+
+        onSuccess: async () => {
+            await queryClient.invalidateQueries({ queryKey: ["user"] });
+            toast.success("Login realizado com sucesso");
+            router.replace(searchParams.get("redirectTo") || "/reservar");
+        },
+
+        onError: (e: Error) => {
+            toast.error("Erro ao tentar fazer login", {
+                description: e?.message || "Não foi possível entrar. Tente novamente.",
+            })
+        },
+    });
+
+    const form = useForm<FormValues>({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            email: "",
+            password: "",
+        },
+    });
+
+    const onSubmit = async (values: FormValues) => {
+        const payload = {
+            email: values.email,
+            password: values.password,
+        }
+
+        loginMutation(payload);
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        {authError && (
-            <p className="text-sm text-red-600 mt-2" role="alert">
-                {authError}
-            </p>
-        )}
-        
         <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
                 <FormItem>
-                    <FormLabel>E-mail</FormLabel>
+                    <FormLabel
+                        className="font-bold"
+                    >
+                        E-mail
+                    </FormLabel>
 
                     <FormControl>
                         <Input placeholder="exemplo@gmail.com" {...field} />
@@ -107,7 +115,11 @@ const LoginForm = () => {
             name="password"
             render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Senha</FormLabel>
+                    <FormLabel
+                        className="font-bold"
+                    >
+                        Senha
+                    </FormLabel>
 
                     <FormControl>
                         <InputGroup>
@@ -132,9 +144,13 @@ const LoginForm = () => {
           )}
         />
 
-        <Button type="submit">
+        <Button
+            type="submit"
+            disabled={isPending}
+            className="w-full"
+        >
             {
-                loading 
+                isPending 
                     ? <><Loader2Icon className="size-4 animate-spin" /> Entrando...</> 
                     : "Entrar"
             }
