@@ -5,7 +5,7 @@ import {
     isSameMonth as isSameMonthDateFns,
 } from "date-fns";
 
-import { MachineEnum, MachineType, Reservation } from "@/types";
+import { MachineEnum, MachineType, ReservationType } from "@/types";
 import { getMachineName } from "@/lib/utils";
 
 const TIMES = [
@@ -24,18 +24,18 @@ export type ReservationTimes = {
 
 export function useReservations() {
     const params = useParams<{ machine: MachineType }>();
-    const machine = params?.machine ?? "" as MachineType;
+    const machine = params?.machine ?? "" as MachineType | undefined;
 
     const startOfToday = startOfDay(new Date());
     const maxDate = addDays(startOfToday, 15);
     const isSameMonth = isSameMonthDateFns(startOfToday, maxDate);
-    const type = machine.toLowerCase() as MachineType;
+    const type = (machine ?? "").toLowerCase() as MachineType;
     const machineEnum = getMachineName(type);
     
     async function fetchReservations(
         day: string,
         machine_enum: MachineEnum
-    ): Promise<Reservation[]> {
+    ): Promise<ReservationType[]> {
         const res = await fetch(
             `/api/reservations?day=${day}&machine=${machine_enum}`, 
             {
