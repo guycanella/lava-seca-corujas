@@ -1,8 +1,8 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react";
-import { format } from "date-fns";
-
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { format, isSameDay as isSameDayDateFns } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircleIcon } from "lucide-react";
@@ -10,7 +10,7 @@ import { AlertCircleIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton"
-import { Reservation } from "@/types";
+import { ReservationType } from "@/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ReservationTimes, Times, useReservations } from "./useReservations";
 import { Show } from "@/components/Show/Show";
@@ -18,6 +18,8 @@ import { AlertDialog, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { ConfirmDialog } from "@/components/ConfirmDialog/ConfirmDialog";
 
 export default function CalendarMachinePage() {
+    const router = useRouter();
+    
     const {
         TIMES,
         fetchReservations,
@@ -30,8 +32,9 @@ export default function CalendarMachinePage() {
     } = useReservations();
     
     const [date, setDate] = useState<Date>(startOfToday);
-    const [selectedTime, setSelectedTime] = useState<string | null>(null);
-    const dayISO = date.toISOString().slice(0,10)
+    const [openTime, setOpenTime] = useState<string | null>(null);
+    const [debouncedDate, setDebouncedDate] = useState<Date>(date);
+    const dayISO = debouncedDate.toISOString().slice(0,10)
     
     renderNotFound();
 
@@ -42,14 +45,14 @@ export default function CalendarMachinePage() {
         error,
         isFetching,
         refetch
-    } = useQuery<Reservation[]>({
+    } = useQuery<ReservationType[]>({
         queryKey: ["reservations", dayISO, machineEnum],
         queryFn: () => fetchReservations(dayISO, machineEnum),
         staleTime: 30_000,
         refetchOnWindowFocus: false,
     })
 
-    const reservations = useCallback(() => {
+    const reservations = useMemo(() => {
         if (!data) return [];
 
         if (data.length === 0) return [];
@@ -73,12 +76,18 @@ export default function CalendarMachinePage() {
     }, [data])
 
     const unavailableTimes = useMemo(() => {
-        if (reservations().length === 0) return [];
+        if (reservations.length === 0) return [];
 
-        return reservations().map((reservation) => reservation.time);
+        return reservations.map((reservation) => reservation.time);
     }, [reservations])
 
-    console.log({ reservations: reservations() });
+    const isToday = isSameDayDateFns(date, new Date());
+    const currentHHMM = format(new Date(), "HH:mm");
+
+    useEffect(() => {
+        const id = setTimeout(() => setDebouncedDate(date), 250);
+        return () => clearTimeout(id);
+    }, [date]);
 
     return (
         <div className="flex flex-col min-h-screen items-center gap-4 p-4">
@@ -89,7 +98,7 @@ export default function CalendarMachinePage() {
                 numberOfMonths={ isSameMonth ? 1 : 2 }
                 hidden={{ after: maxDate }}
                 selected={date}
-                onSelect={setDate}
+                onSelect={(newDate) => newDate && setDate(newDate)}
                 disabled={{ before: startOfToday, after: maxDate }}
                 locale={ptBR}
                 required
@@ -133,29 +142,62 @@ export default function CalendarMachinePage() {
                 <Show.Else>
                     <div className="grid grid-cols-2 gap-2 w-full">
                         {TIMES.map((time) => {
+                            const passed = isToday && time <= currentHHMM;
                             const isOccupied = unavailableTimes.includes(time);
-                            const occupiedTime = reservations().find((reservation) => reservation.time === time);
+                            const disabled = passed || isOccupied;
+                            const occupiedTime = reservations.find((reservation) => reservation.time === time);
+                            let ariaLabel = "";
+
+                            if (isOccupied) {
+                                ariaLabel = `Horário ${time} já está ocupado pelo apartamento ${occupiedTime?.apartment}`;
+                            } else if (passed) {
+                                ariaLabel = `Horário ${time} indisponível`;
+                            } else {
+                                ariaLabel = `Horário ${time} disponível para reserva`;
+                            }
 
                             return (
-                                <AlertDialog key={time}>
+                                <AlertDialog
+                                    key={time}
+                                    open={openTime === time}
+                                    onOpenChange={
+                                        (isOpen) => 
+                                            setOpenTime(isOpen ? time : null)
+                                    }
+                                >
                                     <AlertDialogTrigger asChild>
                                         <Button
                                             size="lg"
                                             className="h-auto py-1"
-                                            disabled={isOccupied}
+                                            aria-label={ariaLabel}
+                                            disabled={disabled}
+                                            onClick={() => setOpenTime(time)}
                                         >
                                             {time}<br />
                                             {isOccupied ? occupiedTime?.apartment : ""}
                                         </Button>
                                     </AlertDialogTrigger>
 
-                                    <ConfirmDialog />
+                                    <ConfirmDialog
+                                        date={debouncedDate}
+                                        time={time}
+                                        type={type}
+                                        dayISO={dayISO}
+                                        onClose={() => setOpenTime(null)}
+                                    />
                                 </AlertDialog>
                             )
                         })}
                     </div>
                 </Show.Else>
             </Show>
+
+            <Button
+                className="w-full"
+                onClick={() => router.back()}
+            >
+                Voltar
+            </Button>
         </div>
     );
 }
