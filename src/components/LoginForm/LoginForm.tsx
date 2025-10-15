@@ -96,7 +96,7 @@ const LoginForm = () => {
             render={({ field }) => (
                 <FormItem>
                     <FormLabel
-                        className="font-bold"
+                        className="font-bold text-green-wings"
                     >
                         E-mail
                     </FormLabel>
@@ -116,7 +116,7 @@ const LoginForm = () => {
             render={({ field }) => (
                 <FormItem>
                     <FormLabel
-                        className="font-bold"
+                        className="font-bold text-green-wings"
                     >
                         Senha
                     </FormLabel>

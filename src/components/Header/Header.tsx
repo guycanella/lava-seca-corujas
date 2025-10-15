@@ -57,7 +57,9 @@ export function Header() {
     }
 
     return (
-        <header className="w-full flex justify-between items-center p-4">
+        <header
+            className="w-full flex justify-between items-center p-4 shadow-[var(--shadow-bottom)]"
+        >
             <div className="flex gap-4">
                 <div>
                     <span className="font-bold">Nome: </span>
