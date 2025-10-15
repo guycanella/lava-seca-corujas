@@ -41,6 +41,8 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --color-green-wings: var(--green-wings);
+  --shadow-bottom: 0 6px 12px -8px hsl(0 0% 0% / 20%);
 }
 
 :root {
@@ -76,6 +78,10 @@
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
+  --green-wings: hsl(146, 47%, 65%);
+  --success-bg: hsl(143, 85%, 96%);
+  --success-border: hsl(145, 92%, 87%);
+  --success-text: hsl(140, 100%, 27%);
 }
 
 .dark {
@@ -110,6 +116,7 @@
   --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.551 0.027 264.364);
+  --shadow-bottom: 0 6px 12px -8px hsl(0 0% 100% / 35%);
 }
 
 @layer base {
