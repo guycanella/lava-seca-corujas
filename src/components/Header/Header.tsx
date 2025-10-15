@@ -59,23 +59,44 @@ export function Header() {
     return (
         <header
             className="w-full flex justify-between items-center p-4 shadow-[var(--shadow-bottom)]"
+            aria-busy={isPending ? true : undefined}
+            aria-label="Cabecalho da página"
         >
             <div className="flex gap-4">
                 <div>
                     <span className="font-bold">Nome: </span>
-                    {isLoading ? <Skeleton className="w-24 h-4" /> : formatName(data?.name)}
+                    {
+                        isLoading ? (
+                            <>
+                                <Skeleton className="w-24 h-4" />
+                                <span className="sr-only">Carregando nome do usuário</span>
+                            </>
+                        ) : formatName(data?.name)
+                    }
                 </div>
                 <div>
                     <span className="font-bold">Apto: </span>
-                    {isLoading ? <Skeleton className="w-24 h-4" /> : data?.apartment_number}
+                    {
+                        isLoading ? (
+                            <>
+                                <Skeleton className="w-24 h-4" />
+                                <span className="sr-only">Carregando número do apartamento</span>
+                            </>
+                        ) : data?.apartment_number
+                    }
                 </div>
             </div>
             <div>
-                <Button onClick={handleLogout} disabled={isPending}>
+                <Button
+                    onClick={handleLogout}
+                    disabled={isPending}
+                    aria-disabled={isPending}
+                    aria-label={isPending ? "Saindo, aguarde..." : "Sair da conta"}
+                >
                     {
                         isPending ? (
                             <>
-                                <Loader2Icon className="size-4 animate-spin" />
+                                <Loader2Icon className="size-4 animate-spin" aria-hidden="true" />
                                 Saindo...
                             </>
                         ) : "Logout"

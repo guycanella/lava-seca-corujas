@@ -31,11 +31,18 @@ export default function RootLayout({
       <body
         className={`${openSans.variable} antialiased`}
       >
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 rounded bg-primary px-3 py-2 text-primary-foreground"
+        >
+          Pular para o conteúdo
+        </a>
+        
         <Providers>
           <UserProvider>
             <ThemeProvider defaultTheme="system">
               <GlobalLiveRegionProvider>
-                <main>
+                <main id="main-content" role="main">
                   <ThemeSwitch />
                   {children}
                   <Toaster richColors closeButton position="bottom-right" />

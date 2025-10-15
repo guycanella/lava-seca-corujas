@@ -11,11 +11,13 @@ import {
     DialogTitle,
 } from "../ui/dialog";
 
-import { getCookieConsent, setCookieConsent } from "@/lib/cookieConsent";
 import { Button } from "../ui/button";
+import { getCookieConsent, setCookieConsent } from "@/lib/cookieConsent";
+import { useGlobalLiveRegion } from "@/contexts/GlobalLiveRegion";
 
 export default function CookieConsentDialog() {
     const [open, setOpen] = useState(false);
+    const { announce } = useGlobalLiveRegion();
 
     useEffect(() => {
         const consent = getCookieConsent();
@@ -25,11 +27,13 @@ export default function CookieConsentDialog() {
     const handleAccept = () => {
         setCookieConsent("accepted");
         setOpen(false);
+        announce("Consentimento de cookies aceito.", "polite");
     };
     
       const handleDecline = () => {
         setCookieConsent("declined");
         setOpen(false);
+        announce("Consentimento de cookies rejeitado.", "assertive");
     };
 
     return (
@@ -48,13 +52,17 @@ export default function CookieConsentDialog() {
 
                 <DialogFooter>
                     <Button
+                        type="button"
                         onClick={handleAccept}
-                        variant="secondary"
+                        aria-label="Aceitar uso de cookies"
                     >
                             Aceitar
                     </Button>
                     <Button
+                        type="button"
+                        variant="secondary"
                         onClick={handleDecline}
+                        aria-label="Rejeitar uso de cookies"
                     >
                         Rejeitar
                     </Button>
