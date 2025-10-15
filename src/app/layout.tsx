@@ -1,19 +1,17 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Open_Sans } from "next/font/google";
 
 import { Providers } from "./providers";
 import { UserProvider } from "@/contexts/UserContext";
 import { Toaster } from "@/components/ui/sonner"
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import ThemeSwitch from "@/components/ThemeSwitch/ThemeSwitch";
 
 import "./globals.css";
+import CookieConsentDialog from "@/components/CookieConsentDialog/CookieConsentDialog";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const openSans = Open_Sans({
+  variable: "--font-open-sans",
   subsets: ["latin"],
 });
 
@@ -30,14 +28,18 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${openSans.variable} antialiased`}
       >
         <Providers>
           <UserProvider>
-            <main>
-              {children}
-              <Toaster richColors closeButton position="bottom-right" />
-            </main>
+            <ThemeProvider defaultTheme="system">
+              <main>
+                <ThemeSwitch />
+                {children}
+                <Toaster richColors closeButton position="bottom-right" />
+                <CookieConsentDialog />
+              </main>
+            </ThemeProvider>
           </UserProvider>
         </Providers>
       </body>
