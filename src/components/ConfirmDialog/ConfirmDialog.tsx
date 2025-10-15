@@ -17,6 +17,7 @@ import { useUser } from "@/contexts/UserContext";
 import { MachineType } from "@/types";
 import { Times, useReservations } from "@/app/reservar/[machine]/useReservations";
 import { getMachineName } from "@/lib/utils";
+import { Button } from "../ui/button";
 
 type ConfirmDialogType = {
     type: MachineType;
@@ -91,6 +92,7 @@ export function ConfirmDialog({
             toast.error("Erro ao tentar reservar", {
                 description: `Erro: ${e?.message}`,
             })
+            onClose?.();
         },
     });
 
@@ -122,7 +124,7 @@ export function ConfirmDialog({
                 >
                     Cancelar
                 </AlertDialogCancel>
-                <AlertDialogAction
+                <Button
                     onClick={handleMakeReservation}
                     disabled={mutation.isPending}
                 >
@@ -135,7 +137,7 @@ export function ConfirmDialog({
                               </> 
                             : "Reservar"
                     }
-                </AlertDialogAction>
+                </Button>
             </AlertDialogFooter>
         </AlertDialogContent>
     )
