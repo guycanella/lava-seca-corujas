@@ -10,15 +10,11 @@ export const formSchema = z.object({
         .min(8, { message: "Mínimo de 8 caracteres" })
         .max(32, { message: "Máximo de 32 caracteres" }),
   });
-  
-export type FormValues = z.infer<typeof formSchema>;
 
 export const payloadLoginSchema = z.object({
     email: z.email(),
     password: z.string(),
 });
-
-export type PayloadLoginType = z.infer<typeof payloadLoginSchema>;
 
 const MachineSchema = z.enum(['washer', 'dryer']);
 
@@ -70,6 +66,8 @@ export const BodyLoginSchema = z.object({
     password: z.string(),
 });
 
+export type FormValues = z.infer<typeof formSchema>;
+export type PayloadLoginType = z.infer<typeof payloadLoginSchema>;
 export type MachineType = 'lavadora' | 'secadora';
 export type MachineEnum = z.infer<typeof MachineSchema>;
 export type UsersAppType = z.infer<typeof UsersSchema>;
