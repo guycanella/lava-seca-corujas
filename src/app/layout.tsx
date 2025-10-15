@@ -9,6 +9,7 @@ import ThemeSwitch from "@/components/ThemeSwitch/ThemeSwitch";
 
 import "./globals.css";
 import CookieConsentDialog from "@/components/CookieConsentDialog/CookieConsentDialog";
+import { GlobalLiveRegionProvider } from "@/contexts/GlobalLiveRegion";
 
 const openSans = Open_Sans({
   variable: "--font-open-sans",
@@ -33,12 +34,14 @@ export default function RootLayout({
         <Providers>
           <UserProvider>
             <ThemeProvider defaultTheme="system">
-              <main>
-                <ThemeSwitch />
-                {children}
-                <Toaster richColors closeButton position="bottom-right" />
-                <CookieConsentDialog />
-              </main>
+              <GlobalLiveRegionProvider>
+                <main>
+                  <ThemeSwitch />
+                  {children}
+                  <Toaster richColors closeButton position="bottom-right" />
+                  <CookieConsentDialog />
+                </main>
+              </GlobalLiveRegionProvider>
             </ThemeProvider>
           </UserProvider>
         </Providers>

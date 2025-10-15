@@ -4,7 +4,6 @@ import { Loader2Icon } from "lucide-react";
 import { format } from "date-fns";
 
 import {
-    AlertDialogAction,
     AlertDialogCancel,
     AlertDialogContent,
     AlertDialogDescription,
@@ -13,6 +12,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
+import { useGlobalLiveRegion } from "@/contexts/GlobalLiveRegion";
 import { useUser } from "@/contexts/UserContext";
 import { MachineType } from "@/types";
 import { Times, useReservations } from "@/app/reservar/[machine]/useReservations";
@@ -73,6 +73,7 @@ export function ConfirmDialog({
 }: ConfirmDialogType) {
     const { data } = useUser();
     const { machineEnum } = useReservations();
+    const { announce } = useGlobalLiveRegion();
 
     const queryClient = useQueryClient();
 
@@ -85,6 +86,7 @@ export function ConfirmDialog({
                 queryKey: ["reservations", dayISO, machineEnum],
             });
             toast.success("Reserva criada com sucesso");
+            announce("Reserva criada com sucesso.", "polite");
             onClose?.();
         },
 
@@ -92,6 +94,7 @@ export function ConfirmDialog({
             toast.error("Erro ao tentar reservar", {
                 description: `Erro: ${e?.message}`,
             })
+            announce("Erro ao tentar reservar", "assertive");
             onClose?.();
         },
     });
@@ -109,7 +112,7 @@ export function ConfirmDialog({
         <AlertDialogContent>
             <AlertDialogHeader>
                 <AlertDialogTitle>
-                    Tem certeza que deseja reservar?
+                    Confirmar reserva
                 </AlertDialogTitle>
 
                 <AlertDialogDescription>
@@ -120,13 +123,22 @@ export function ConfirmDialog({
             
             <AlertDialogFooter>
                 <AlertDialogCancel
-                disabled={mutation.isPending}
+                    type="button"
+                    disabled={mutation.isPending}
+                    aria-disabled={mutation.isPending}
                 >
                     Cancelar
                 </AlertDialogCancel>
                 <Button
+                    type="button"
                     onClick={handleMakeReservation}
                     disabled={mutation.isPending}
+                    aria-disabled={mutation.isPending}
+                    aria-label={
+                        mutation.isPending 
+                            ? "Reservando…" 
+                            : "Confirmar reserva"
+                    }
                 >
                     {
                         mutation.isPending 
