@@ -80,7 +80,7 @@ const LoginForm = () => {
 
     const onSubmit = async (values: FormValues) => {
         const payload = {
-            email: values.email,
+            email: values.email.trim().toLowerCase(),
             password: values.password,
         }
 
