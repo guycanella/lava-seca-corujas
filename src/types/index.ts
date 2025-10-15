@@ -1,8 +1,14 @@
 import { z } from "zod";
 
 export const formSchema = z.object({
-    email: z.email({ message: "É necessário inserir um email válido" }),
-    password: z.string().min(8, { message: "Mínimo de 8 caracteres" }),
+    email: z
+        .email({ message: "É necessário inserir um e-mail válido" })
+        .trim()
+        .toLowerCase(),
+    password: z
+        .string()
+        .min(8, { message: "Mínimo de 8 caracteres" })
+        .max(32, { message: "Máximo de 32 caracteres" }),
   });
   
 export type FormValues = z.infer<typeof formSchema>;
