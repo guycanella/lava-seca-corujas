@@ -89,112 +89,181 @@ export default function CalendarMachinePage() {
         return () => clearTimeout(id);
     }, [date]);
 
+    const headingId = "reservar-heading";
+    const timesRegionId = "times-status";
+
     return (
         <div className="flex flex-col min-h-screen items-center gap-4 p-4">
-            <h2 className="text-2xl font-bold">Reservar {type}</h2>
+            <h1
+                className="text-2xl font-bold"
+                id={headingId}
+                role="heading"
+                aria-level={2}
+            >
+                Reservar {type}
+            </h1>
 
-            <Calendar
-                mode="single"
-                numberOfMonths={ isSameMonth ? 1 : 2 }
-                hidden={{ after: maxDate }}
-                selected={date}
-                onSelect={(newDate) => newDate && setDate(newDate)}
-                disabled={{ before: startOfToday, after: maxDate }}
-                locale={ptBR}
-                required
-                className="rounded-lg border shadow-sm"
-            />
+            <section
+                aria-labelledby="calendar-label"
+                className="w-full max-w-3xl"
+            >
+                <h2 id="calendar-label" className="sr-only">
+                    Calendário: Escolha uma data
+                </h2>
 
-            <Show>
-                <Show.When isTrue={isLoading || isFetching}>
-                    <div className="grid grid-cols-2 gap-2 w-full">
-                        {Array.from({ length: TIMES.length / 2 }).map(
-                            (_, index) => (
-                                <Skeleton
-                                    key={`skeleton-${index}`}
-                                    className="h-[50px] rounded-full"
-                                />
-                            )
-                        )}
-                    </div>
-                </Show.When>
+                <Calendar
+                    mode="single"
+                    numberOfMonths={ isSameMonth ? 1 : 2 }
+                    hidden={{ after: maxDate }}
+                    selected={date}
+                    onSelect={(newDate) => newDate && setDate(newDate)}
+                    disabled={{ before: startOfToday, after: maxDate }}
+                    locale={ptBR}
+                    required
+                    className="rounded-lg border shadow-sm"
+                    aria-describedby="calendar-help"
+                />
 
-                <Show.When isTrue={isError}>
-                    <div>
-                        <Alert variant="destructive">
-                            <AlertCircleIcon />
-                            <AlertTitle>
-                                Erro: {(error as Error)?.message}
-                            </AlertTitle>
-                            <AlertDescription>
-                                <Button
-                                    variant="outline"
-                                    onClick={() => refetch()}
-                                    size="lg"
-                                >
-                                    Tentar novamente
-                                </Button>
-                            </AlertDescription>
-                        </Alert>
-                    </div>
-                </Show.When>
+                <p id="calendar-help" className="sr-only">
+                    Datas passadas e além do limite estão desabilitadas. 
+                    Use as setas para navegar pelos meses. 
+                    Selecione uma data para ver os horários disponíveis.
+                </p>
+            </section>
 
-                <Show.Else>
-                    <div className="grid grid-cols-2 gap-2 w-full">
-                        {TIMES.map((time) => {
-                            const passed = isToday && time <= currentHHMM;
-                            const isOccupied = unavailableTimes.includes(time);
-                            const disabled = passed || isOccupied;
-                            const occupiedTime = reservations.find((reservation) => reservation.time === time);
-                            let ariaLabel = "";
+            <div
+                id={timesRegionId}
+                className="sr-only"
+                aria-live="polite"
+                aria-atomic="true"
+            >
+                {(
+                    () => {
+                        if (isLoading || isFetching) {
+                            return "Carregando horários...";
+                        } else if (isError) {
+                            return "Erro ao carregar horários.";
+                        } else {
+                            return "";
+                        }
+                    }
+                )()}
+            </div>
 
-                            if (isOccupied) {
-                                ariaLabel = `Horário ${time} já está ocupado pelo apartamento ${occupiedTime?.apartment}`;
-                            } else if (passed) {
-                                ariaLabel = `Horário ${time} indisponível`;
-                            } else {
-                                ariaLabel = `Horário ${time} disponível para reserva`;
-                            }
+            <section aria-labelledby="times-label" className="w-full max-w-3xl">
+                <h2 id="times-label" className="sr-only">
+                    Horários disponíveis
+                </h2>
 
-                            return (
-                                <AlertDialog
-                                    key={time}
-                                    open={openTime === time}
-                                    onOpenChange={
-                                        (isOpen) => 
-                                            setOpenTime(isOpen ? time : null)
-                                    }
-                                >
-                                    <AlertDialogTrigger asChild>
-                                        <Button
-                                            size="lg"
-                                            className="h-auto py-1"
-                                            aria-label={ariaLabel}
-                                            disabled={disabled}
-                                            onClick={() => setOpenTime(time)}
-                                        >
-                                            {time}<br />
-                                            {isOccupied ? occupiedTime?.apartment : ""}
-                                        </Button>
-                                    </AlertDialogTrigger>
-
-                                    <ConfirmDialog
-                                        date={debouncedDate}
-                                        time={time}
-                                        type={type}
-                                        dayISO={dayISO}
-                                        onClose={() => setOpenTime(null)}
+                <Show>
+                    <Show.When isTrue={isLoading || isFetching}>
+                        <div
+                            className="grid grid-cols-2 gap-2 w-full"
+                            aria-busy="true"
+                        >
+                            {Array.from({ length: TIMES.length / 2 }).map(
+                                (_, index) => (
+                                    <Skeleton
+                                        key={`skeleton-${index}`}
+                                        className="h-[50px] rounded-full"
                                     />
-                                </AlertDialog>
-                            )
-                        })}
-                    </div>
-                </Show.Else>
-            </Show>
+                                )
+                            )}
+                        </div>
+                    </Show.When>
+
+                    <Show.When isTrue={isError}>
+                        <div>
+                            <Alert variant="destructive" role="alert">
+                                <AlertCircleIcon aria-hidden="true" />
+                                <AlertTitle>
+                                    Erro: {(error as Error)?.message}
+                                </AlertTitle>
+                                <AlertDescription>
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => refetch()}
+                                        size="lg"
+                                        aria-label="Tentar novamente carregar os horários"
+                                    >
+                                        Tentar novamente
+                                    </Button>
+                                </AlertDescription>
+                            </Alert>
+                        </div>
+                    </Show.When>
+
+                    <Show.Else>
+                        <div
+                            className="grid grid-cols-2 gap-2 w-full"
+                            role="group"
+                            aria-labelledby="times-label"
+                        >
+                            {TIMES.map((time) => {
+                                const passed = isToday && time <= currentHHMM;
+                                const isOccupied = unavailableTimes.includes(time);
+                                const disabled = passed || isOccupied;
+                                const occupiedTime = reservations.find((reservation) => reservation.time === time);
+                                let ariaLabel = "";
+
+                                if (isOccupied) {
+                                    ariaLabel = `
+                                        Horário ${time} já está ocupado pelo 
+                                        apartamento ${occupiedTime?.apartment}
+                                    `;
+                                } else if (passed) {
+                                    ariaLabel = `Horário ${time} indisponível`;
+                                } else {
+                                    ariaLabel = `Horário ${time} disponível para reserva`;
+                                }
+
+                                return (
+                                    <AlertDialog
+                                        key={time}
+                                        open={openTime === time}
+                                        onOpenChange={
+                                            (isOpen) => 
+                                                setOpenTime(isOpen ? time : null)
+                                        }
+                                    >
+                                        <AlertDialogTrigger asChild>
+                                            <Button
+                                                type="button"
+                                                size="lg"
+                                                className="h-auto py-1"
+                                                aria-label={ariaLabel}
+                                                disabled={disabled}
+                                                onClick={() => setOpenTime(time)}
+                                            >
+                                                {time}<br />
+                                                {isOccupied ? occupiedTime?.apartment : ""}
+
+                                                <span className="sr-only">
+                                                    {ariaLabel}
+                                                </span>
+                                            </Button>
+                                        </AlertDialogTrigger>
+
+                                        <ConfirmDialog
+                                            date={debouncedDate}
+                                            time={time}
+                                            type={type}
+                                            dayISO={dayISO}
+                                            onClose={() => setOpenTime(null)}
+                                        />
+                                    </AlertDialog>
+                                )
+                            })}
+                        </div>
+                    </Show.Else>
+                </Show>
+            </section>
 
             <Button
+                type="button"
                 className="w-full"
                 onClick={() => router.back()}
+                aria-label="Voltar para a página anterior"
             >
                 Voltar
             </Button>
