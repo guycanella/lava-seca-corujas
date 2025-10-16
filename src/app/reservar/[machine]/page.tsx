@@ -12,10 +12,11 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton"
 import { ReservationType } from "@/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ReservationTimes, Times, useReservations } from "./useReservations";
+import { useReservations } from "./useReservations";
 import { Show } from "@/components/Show/Show";
 import { AlertDialog, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { ConfirmDialog } from "@/components/ConfirmDialog/ConfirmDialog";
+import { getUnavailableTimes, mapReservationsToTimes } from "@/lib/utils";
 
 export default function CalendarMachinePage() {
     const router = useRouter();
@@ -53,32 +54,11 @@ export default function CalendarMachinePage() {
     })
 
     const reservations = useMemo(() => {
-        if (!data) return [];
-
-        if (data.length === 0) return [];
-
-        return data.reduce((acc, reservation) => {
-            const dateObj = new Date(reservation.start_time);
-            const dateFormatted = format(dateObj, "HH:mm") as Times;
-            const apartment = reservation.apartments.number;
-            const user = reservation.users_app.name;
-            
-            const aux = {
-                apartment: apartment,
-                time: dateFormatted,
-                user: user,
-            }
-
-            acc.push(aux);
-
-            return acc;
-        }, [] as ReservationTimes[])
+        return mapReservationsToTimes(data);
     }, [data])
 
     const unavailableTimes = useMemo(() => {
-        if (reservations.length === 0) return [];
-
-        return reservations.map((reservation) => reservation.time);
+        return getUnavailableTimes(reservations);
     }, [reservations])
 
     const isToday = isSameDayDateFns(date, new Date());

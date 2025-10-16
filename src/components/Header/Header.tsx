@@ -2,12 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Loader2Icon } from "lucide-react";
+import { toast } from "sonner";
 
 import { useUser } from "@/contexts/UserContext";
 import { Button } from "../ui/button";
-import { toast } from "sonner";
-import { Loader2Icon } from "lucide-react";
 import { Skeleton } from "../ui/skeleton";
+import { formatName } from "@/lib/utils";
 
 async function logout() {
     const res = await fetch("/api/auth/logout", {
@@ -48,12 +49,6 @@ export function Header() {
 
     const handleLogout = () => {
         logoutMutation();
-    }
-
-    const formatName = (name: string | undefined) => {
-        if (!name) return "Usuário"
-        
-        return name.split(" ")[0];
     }
 
     return (
