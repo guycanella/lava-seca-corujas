@@ -10,7 +10,7 @@ export default function ReservarHome() {
   const [secadoraLoading, setSecadoraLoading] = useState(true)
 
   return (
-    <div className="h-screen flex flex-col items-center gap-4 p-4">
+    <div className="h-screen flex flex-col items-center gap-4 p-4 xs:flex-row xs:gap-16 xs:justify-center xs:items-start xs:pt-16">
       <section
         aria-labelledby="lavadora-heading"
         className="flex flex-col items-center gap-4"

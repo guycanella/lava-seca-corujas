@@ -43,6 +43,7 @@
   --radius-xl: calc(var(--radius) + 4px);
   --color-green-wings: var(--green-wings);
   --shadow-bottom: 0 6px 12px -8px hsl(0 0% 0% / 20%);
+  --breakpoint-xs: 30rem;
 }
 
 :root {
