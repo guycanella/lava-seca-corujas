@@ -105,7 +105,7 @@ export default function CalendarMachinePage() {
 
             <section
                 aria-labelledby="calendar-label"
-                className="w-full max-w-3xl"
+                className="w-full max-w-3xl flex flex-col items-center gap-4"
             >
                 <h2 id="calendar-label" className="sr-only">
                     Calendário: Escolha uma data
