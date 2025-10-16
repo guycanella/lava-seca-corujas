@@ -2,14 +2,15 @@ import { z } from "zod";
 
 export const formSchema = z.object({
     email: z
-        .email({ message: "É necessário inserir um e-mail válido" })
+        .string()
         .trim()
-        .toLowerCase(),
+        .toLowerCase()
+        .pipe(z.email({ message: "É necessário inserir um e-mail válido" })),
     password: z
         .string()
         .min(8, { message: "Mínimo de 8 caracteres" })
         .max(32, { message: "Máximo de 32 caracteres" }),
-  });
+});
 
 export const payloadLoginSchema = z.object({
     email: z.email(),
@@ -25,10 +26,12 @@ export const GetQuerySchema = z.object({
     machine: MachineSchema,
 });
 
-const isoDateSchema = z.string().refine(
-    (s) => !Number.isNaN(new Date(s).getTime()),
-    "Data inválida (esperado ISO)"
-);
+const isoLike = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?$/;
+
+const isoDateSchema = z
+  .string()
+  .regex(isoLike, "Data inválida (esperado ISO com hora)")
+  .refine((s) => !Number.isNaN(new Date(s).getTime()), "Data inválida (não parseável)");
 
 export const CreateReservationSchema = z.object({
     start_time: isoDateSchema,
