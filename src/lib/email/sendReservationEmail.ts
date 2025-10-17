@@ -35,7 +35,7 @@ export async function sendReservationEmail(options: {
     const { dateStr, timeStr } = formatPtBr(start);
   
     const subject = `Sua reserva da ${toggleMachineType(options.equipment)} foi confirmada`;
-  
+
     const result = await resend.emails.send({
         from: RESEND_FROM,
         to: [options.toEmail],
