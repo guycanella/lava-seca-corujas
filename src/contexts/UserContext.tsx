@@ -21,9 +21,11 @@ async function fetchUser() {
 
     const json = await res.json();
 
-    if (!res.ok) throw new Error(json?.error || "Erro ao carregar usuário");
+    if (!res.ok) throw new Error(
+        json?.error || "Erro ao carregar usuário"
+    );
 
-    const validated = UserResponseSchema.safeParse(json);
+    const validated = UserResponseSchema.safeParse(json.data);
     if (!validated.success) throw new Error(validated.error.message);
 
     return validated.data;
