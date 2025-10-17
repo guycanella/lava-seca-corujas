@@ -71,8 +71,9 @@ export const BodyLoginSchema = z.object({
 
 export type FormValues = z.infer<typeof formSchema>;
 export type PayloadLoginType = z.infer<typeof payloadLoginSchema>;
-export type MachineType = 'lavadora' | 'secadora';
-export type MachineEnum = z.infer<typeof MachineSchema>;
+export type MachinePtBR = 'lavadora' | 'secadora';
+export type MachineEn = z.infer<typeof MachineSchema>;
+export type MachinesType = MachinePtBR | MachineEn;
 export type UsersAppType = z.infer<typeof UsersSchema>;
 export type ReservationType = z.infer<typeof ReservationSchema>;
 export type UserResponseType = z.infer<typeof UserResponseSchema>;
