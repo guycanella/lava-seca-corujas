@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Loader2Icon } from "lucide-react";
-import { format } from "date-fns";
+import { formatInTimeZone } from "date-fns-tz";
 
 import {
     AlertDialogCancel,
@@ -41,7 +41,6 @@ function buildLocalTime(day: Date, hhmm: string) {
 }
 
 async function createReservation(payload: CreateReservationPayload) {
-    console.log("payload", payload);
     const res = await fetch("/api/reservations", {
         method: "POST",
         credentials: "include",
@@ -101,9 +100,10 @@ export function ConfirmDialog({
 
     const handleMakeReservation = () => {
         const localTime = buildLocalTime(date, time);
+        const startTimeUtcIso = formatInTimeZone(localTime, "UTC", "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
         mutation.mutate({
-            start_time: format(localTime, "yyyy-MM-dd HH:mm"),
+            start_time: startTimeUtcIso,
             equipment: getMachineName(type),
         });
     }

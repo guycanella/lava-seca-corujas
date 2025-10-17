@@ -69,11 +69,8 @@ export async function POST(req: Request) {
 
     const { start_time, equipment } = parsed.data;
 
-    const startLocal = new Date(start_time);
-    const endLocal = new Date(startLocal.getTime() + 60 * 60 * 1000);    
-
-    const startUtc = fromZonedTime(startLocal, TIME_ZONE);
-    const endUtc = fromZonedTime(endLocal, TIME_ZONE);
+    const startUtc = new Date(start_time);
+    const endUtc = new Date(startUtc.getTime() + 60 * 60 * 1000);
 
     const { data: userData, error: userDataError } = await supabase
         .from("users_app")
