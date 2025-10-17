@@ -5,8 +5,8 @@ import {
     isSameMonth as isSameMonthDateFns,
 } from "date-fns";
 
-import { MachineEnum, MachineType, ReservationType } from "@/types";
-import { getMachineName } from "@/lib/utils";
+import { MachineEn, MachinePtBR, ReservationType } from "@/types";
+import { toggleMachineType } from "@/lib/utils";
 
 const TIMES = [
     "00:00", "01:00", "02:00", "03:00", "04:00", "05:00", "06:00", "07:00", "08:00", "09:00",
@@ -23,18 +23,18 @@ export type ReservationTimes = {
 }
 
 export function useReservations() {
-    const params = useParams<{ machine: MachineType }>();
-    const machine = params?.machine ?? "" as MachineType | undefined;
+    const params = useParams<{ machine: MachinePtBR }>();
+    const machine = params?.machine ?? "" as MachinePtBR | undefined;
 
     const startOfToday = startOfDay(new Date());
     const maxDate = addDays(startOfToday, 15);
     const isSameMonth = isSameMonthDateFns(startOfToday, maxDate);
-    const type = (machine ?? "").toLowerCase() as MachineType;
-    const machineEnum = getMachineName(type);
+    const type = (machine ?? "").toLowerCase() as MachinePtBR;
+    const machineEnum = toggleMachineType(type);
     
     async function fetchReservations(
         day: string,
-        machine_enum: MachineEnum
+        machine_enum: MachineEn
     ): Promise<ReservationType[]> {
         const res = await fetch(
             `/api/reservations?day=${day}&machine=${machine_enum}`, 

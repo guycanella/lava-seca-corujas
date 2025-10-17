@@ -14,13 +14,13 @@ import {
 
 import { useGlobalLiveRegion } from "@/contexts/GlobalLiveRegion";
 import { useUser } from "@/contexts/UserContext";
-import { MachineType } from "@/types";
+import { MachinePtBR, MachineEn } from "@/types";
 import { Times, useReservations } from "@/app/reservar/[machine]/useReservations";
-import { getMachineName } from "@/lib/utils";
+import { toggleMachineType } from "@/lib/utils";
 import { Button } from "../ui/button";
 
 type ConfirmDialogType = {
-    type: MachineType;
+    type: MachinePtBR;
     time: Times;
     dayISO: string;
     date: Date;
@@ -104,7 +104,7 @@ export function ConfirmDialog({
 
         mutation.mutate({
             start_time: startTimeUtcIso,
-            equipment: getMachineName(type),
+            equipment: toggleMachineType(type) as MachineEn,
         });
     }
 
