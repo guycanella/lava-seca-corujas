@@ -1,6 +1,5 @@
 import { supabaseServer } from "@/lib/supabaseServer";
-import { zodErrorResponse } from "@/lib/utils";
-import { UserResponseSchema } from "@/types";
+import { getUserInformation } from "@/lib/user/getUserInformation";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -16,28 +15,11 @@ export async function GET() {
         }, { status: 401 });
     }
 
-    const { data: userData, error: userDataError } = await supabase
-        .from("v_users_with_apartment")
-        .select("id, email, name, apartment_id, apartment_number")
-        .eq("id", user.id)
-        .single();
+    const userData = await getUserInformation(user.id);
 
-    if (userDataError) {
-        return NextResponse.json({
-            error: userDataError.message
-        }, { status: 500 });
+    if (!userData.ok) {
+        return NextResponse.json(userData, { status: 400 });
     }
-
-    const payload = {
-        id: userData.id,
-        email: userData.email,
-        name: userData.name,
-        apartment_id: userData.apartment_id,
-        apartment_number: userData.apartment_number,
-      };
     
-    const validated = UserResponseSchema.safeParse(payload);
-    if (!validated.success) return zodErrorResponse(validated.error);
-    
-    return NextResponse.json(validated.data);
+    return NextResponse.json(userData, { status: 200 });
 }
