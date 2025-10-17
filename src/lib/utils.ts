@@ -4,8 +4,7 @@ import { twMerge } from "tailwind-merge"
 import { z } from "zod";
 
 import {
-  MachineEnum,
-  MachineType,
+  MachinesType,
   ReservationType,
 } from "@/types";
 import { ReservationTimes, Times } from "@/app/reservar/[machine]/useReservations";
@@ -15,8 +14,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function getMachineName(machine_type: MachineType): MachineEnum {
-  return machine_type === 'lavadora' ? 'washer' : 'dryer';
+export function toggleMachineType(machine_type: MachinesType) {
+  switch (machine_type) {
+    case "lavadora": return "washer";
+    case "secadora": return "dryer";
+    case "washer":   return "lavadora";
+    case "dryer":    return "secadora";
+    default:         return machine_type;
+  }
 }
 
 export function zodErrorResponse(err: z.ZodError, status: number = 400) {
@@ -67,4 +72,19 @@ export const getUnavailableTimes = (reservations: ReservationTimes[]) => {
   if (reservations.length === 0) return [];
 
   return reservations.map((reservation) => reservation.time);
+}
+
+export function isErrorWithStatus(
+  error: unknown
+): error is { status?: number; message: string } {
+  if (typeof error === "object" && error !== null) {
+    const err = error as Record<string, unknown>;
+
+    return (
+      typeof err.message === "string" &&
+      (typeof err.status === "number" || typeof err.status === "undefined")
+    );
+  }
+  
+  return false;
 }
