@@ -21,13 +21,17 @@ export async function publishReservationCreated({
         const toName = name;
         const toEmail = email;
 
-        await sendReservationEmail({
+        const result = await sendReservationEmail({
             toName,
             toEmail,
             apartment_number,
             equipment,
             startUtcIso,
         })
+
+        if (result.error) {
+            console.error("Erro no envio do email:", { error: result.error});
+        }
     } catch(error: unknown) {
         if (error instanceof Error) {
             console.error("publishReservationCreated failed:", error.message);
