@@ -30,7 +30,7 @@ export function useReservations() {
     const maxDate = addDays(startOfToday, 15);
     const isSameMonth = isSameMonthDateFns(startOfToday, maxDate);
     const type = (machine ?? "").toLowerCase() as MachinePtBR;
-    const machineEnum = toggleMachineType(type);
+    const machineEnum = toggleMachineType(type) as MachineEn;
     
     async function fetchReservations(
         day: string,
