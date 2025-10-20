@@ -45,7 +45,7 @@ export function useReservations() {
         );
     
         const json = await res.json();
-        
+
         if (!res.ok) throw new Error(json?.error || "Error loading reservations");
     
         return json;
