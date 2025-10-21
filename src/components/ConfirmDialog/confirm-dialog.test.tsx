@@ -19,14 +19,6 @@ vi.mock("@/app/reservar/[machine]/useReservations", () => ({
   useReservations: () => ({ machineEnum: "washer" }),
 }));
 
-vi.mock("@/lib/utils", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/lib/utils")>();
-  return {
-    ...actual,
-    getMachineName: (type: "washer" | "dryer") => type,
-  };
-});
-
 vi.mock("@/contexts/UserContext", async (importOriginal) => {
     const actual = await importOriginal<typeof import("@/contexts/UserContext")>();
     return {
@@ -117,7 +109,6 @@ describe("ConfirmDialog (integration)", () => {
     await waitFor(() => {
         const reservando = withinDlg.getByRole("button", { name: /reservando/i });
         expect(reservando).toHaveAttribute("aria-disabled", "true");
-        // expect(reservando).toBeDisabled();
       });
 
     await waitFor(() => {
@@ -143,8 +134,8 @@ describe("ConfirmDialog (integration)", () => {
     const body = JSON.parse(reqInit.body as string);
 
     expect(body).toMatchObject({
-      start_time: "2025-10-16 10:00",
-      equipment: "lavadora",
+      start_time: "2025-10-16T13:00:00.000Z",
+      equipment: "washer",
     });
 
     const { toast } = await import("sonner");
