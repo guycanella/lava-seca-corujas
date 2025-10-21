@@ -6,8 +6,14 @@ import { format, isSameDay as isSameDayDateFns } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircleIcon } from "lucide-react";
+import dynamic from "next/dynamic";
 
-import { Calendar } from "@/components/ui/calendar";
+// import { Calendar } from "@/components/ui/calendar";
+const CalendarClient = dynamic(
+    () => import("@/components/ui/calendar").then((mod) => mod.Calendar),
+    { ssr: false }
+);
+
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton"
 import { ReservationType } from "@/types";
@@ -93,7 +99,7 @@ export default function CalendarMachinePage() {
                         Calendário: Escolha uma data
                     </h2>
 
-                    <Calendar
+                    <CalendarClient
                         mode="single"
                         numberOfMonths={ isSameMonth ? 1 : 2 }
                         hidden={{ after: maxDate }}
