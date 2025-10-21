@@ -81,8 +81,8 @@ export default function ReservationConfirmed({
 
                         <Text style={{ fontSize: 16, lineHeight: "24px" }}>
                             Sua reserva da <strong>{equipmentPtBR}</strong> foi 
-                            confirmada para o apartamento 
-                            <strong>{apartment_number}</strong> 
+                            confirmada para o apartamento{" "} 
+                            <strong>{apartment_number}</strong>{" "} 
                             em <strong>{dateStr}</strong> às{" "} 
                             <strong>{timeStr}</strong>.
                         </Text>
