@@ -30,51 +30,58 @@ describe("mapReservationsToTimes", () => {
         } as ReservationType,
     ];
 
-  it(" should return an empty array when data is undefined", () => {
+  it("should return an empty array when data is undefined", () => {
     expect(
-        mapReservationsToTimes(undefined as unknown as ReservationType[])
+        mapReservationsToTimes(undefined as unknown as ReservationType[], "user-1")
     ).toEqual([]);
   });
 
-  it(" should return an empty array when data is null", () => {
+  it("should return an empty array when data is null", () => {
     expect(
-        mapReservationsToTimes(null as unknown as ReservationType[])
+        mapReservationsToTimes(null as unknown as ReservationType[], "user-1")
     ).toEqual([]);
   });
 
-  it(" should return an empty array when data is an empty array", () => {
-    expect(mapReservationsToTimes([])).toEqual([]);
+  it("should return an empty array when data is an empty array", () => {
+    expect(mapReservationsToTimes([], "user-1")).toEqual([]);
   });
 
-  it(" should map a reservation correctly", () => {
-    const result = mapReservationsToTimes(mockData);
+  it("should map a reservation correctly", () => {
+    const result = mapReservationsToTimes(mockData, "user-1");
 
     expect(result).toHaveLength(2);
     expect(result[0]).toEqual({
       apartment: "101",
       time: "10:00",
       user: "João Silva",
+      id: "1",
+      isOwn: true,
     });
   });
 
-  it(" should map multiple reservations correctly", () => {
-    const result = mapReservationsToTimes(mockData);
+  it("should map multiple reservations correctly", () => {
+    const result = mapReservationsToTimes(mockData, "user-1");
 
     expect(result).toHaveLength(2);
     expect(result[0].apartment).toBe("101");
+    expect(result[0].id).toBe("1");
+    expect(result[0].isOwn).toBe(true);
+    expect(result[1].apartment).toBe("202");
+    expect(result[1].id).toBe("2");
+    expect(result[1].isOwn).toBe(false);
     expect(result[1].apartment).toBe("202");
   });
 });
 
 describe("getUnavailableTimes", () => {
-  it(" should return an empty array when there are no reservations", () => {
+  it("should return an empty array when there are no reservations", () => {
     expect(getUnavailableTimes([])).toEqual([]);
   });
 
   it(" should return the occupied times correctly", () => {
     const mockReservations: ReservationTimes[] = [
-      { apartment: "101", time: "10:00", user: "João" },
-      { apartment: "202", time: "14:00", user: "Maria" },
+      { apartment: "101", time: "10:00", user: "João", id: "1", isOwn: true },
+      { apartment: "202", time: "14:00", user: "Maria", id: "2", isOwn: false },
     ];
 
     const result = getUnavailableTimes(mockReservations);
@@ -82,10 +89,10 @@ describe("getUnavailableTimes", () => {
     expect(result).toEqual(["10:00", "14:00"]);
   });
 
-  it(" should return only the times, without duplicates", () => {
+  it("should return only the times, without duplicates", () => {
     const mockReservations: ReservationTimes[] = [
-      { apartment: "101", time: "10:00", user: "João" },
-      { apartment: "202", time: "10:00", user: "Maria" },
+      { apartment: "101", time: "10:00", user: "João", id: "1", isOwn: true },
+      { apartment: "202", time: "10:00", user: "Maria", id: "2", isOwn: false },
     ];
 
     const result = getUnavailableTimes(mockReservations);

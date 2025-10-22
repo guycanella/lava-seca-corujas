@@ -3,7 +3,7 @@
 import { useCallback, useRef, useState } from "react";
 import { createContext, useContextSelector } from "use-context-selector";
 
-type Politeness = "polite" | "assertive"
+import { Politeness } from "@/types";
 
 type GlobalLiveRegionContextType = {
     announce: (message: string, politeness?: Politeness) => void;
