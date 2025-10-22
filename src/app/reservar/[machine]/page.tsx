@@ -8,7 +8,6 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertCircleIcon } from "lucide-react";
 import dynamic from "next/dynamic";
 
-// import { Calendar } from "@/components/ui/calendar";
 const CalendarClient = dynamic(
     () => import("@/components/ui/calendar").then((mod) => mod.Calendar),
     { ssr: false }
@@ -23,10 +22,17 @@ import { Show } from "@/components/Show/Show";
 import { AlertDialog, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { ConfirmDialog } from "@/components/ConfirmDialog/ConfirmDialog";
 import { getUnavailableTimes, mapReservationsToTimes } from "@/lib/utils";
+import { useUser } from "@/contexts/UserContext";
 
 export default function CalendarMachinePage() {
     const router = useRouter();
-    
+    const {
+        data: userData,
+        isLoading: isUserLoading,
+        isError: isUserError,
+        error: userError
+    } = useUser();
+
     const {
         TIMES,
         fetchReservations,
@@ -60,8 +66,8 @@ export default function CalendarMachinePage() {
     })
 
     const reservations = useMemo(() => {
-        return mapReservationsToTimes(data);
-    }, [data])
+        return mapReservationsToTimes(data, userData?.id);
+    }, [data, userData?.id])
 
     const unavailableTimes = useMemo(() => {
         return getUnavailableTimes(reservations);
@@ -144,7 +150,7 @@ export default function CalendarMachinePage() {
                     </h2>
 
                     <Show>
-                        <Show.When isTrue={isLoading || isFetching}>
+                        <Show.When isTrue={isLoading || isFetching || isUserLoading}>
                             <div
                                 className="grid grid-cols-2 gap-2 w-full xs:grid-cols-3"
                                 aria-busy="true"
@@ -181,6 +187,28 @@ export default function CalendarMachinePage() {
                             </div>
                         </Show.When>
 
+                        <Show.When isTrue={isUserError}>
+                            <div>
+                                <Alert variant="destructive" role="alert">
+                                    <AlertCircleIcon aria-hidden="true" />
+                                    <AlertTitle>
+                                        As informações do usuário não foram encontradas.
+                                        Erro: {(userError as Error)?.message}
+                                    </AlertTitle>
+                                    <AlertDescription>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => router.refresh()}
+                                            size="lg"
+                                            aria-label="Tentar novamente carregar as informações do usuário"
+                                        >
+                                            Tentar novamente
+                                        </Button>
+                                    </AlertDescription>
+                                </Alert>
+                            </div>
+                        </Show.When>
+
                         <Show.Else>
                             <div
                                 className="grid grid-cols-2 gap-2 w-full xs:grid-cols-3"
@@ -190,9 +218,15 @@ export default function CalendarMachinePage() {
                                 {TIMES.map((time) => {
                                     const passed = isToday && time <= currentHHMM;
                                     const isOccupied = unavailableTimes.includes(time);
-                                    const disabled = passed || isOccupied;
                                     const occupiedTime = reservations.find((reservation) => reservation.time === time);
+                                    const isOwnReservation = occupiedTime?.isOwn === true;
+                                    const disabled = passed || (isOccupied && !isOwnReservation);
                                     let ariaLabel = "";
+                                    let buttonsClassName = "h-auto py-1";
+
+                                     if (isOwnReservation) {
+                                        buttonsClassName += " bg-blue-300";
+                                     }
 
                                     if (isOccupied) {
                                         ariaLabel = `
@@ -218,7 +252,7 @@ export default function CalendarMachinePage() {
                                                 <Button
                                                     type="button"
                                                     size="lg"
-                                                    className="h-auto py-1"
+                                                    className={buttonsClassName}
                                                     aria-label={ariaLabel}
                                                     disabled={disabled}
                                                     onClick={() => setOpenTime(time)}
@@ -238,6 +272,8 @@ export default function CalendarMachinePage() {
                                                 type={type}
                                                 dayISO={dayISO}
                                                 onClose={() => setOpenTime(null)}
+                                                reservationId={occupiedTime?.id ?? ""}
+                                                isOwnReservation={isOwnReservation}
                                             />
                                         </AlertDialog>
                                     )
