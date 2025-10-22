@@ -18,8 +18,10 @@ export type Times = typeof TIMES[number];
 
 export type ReservationTimes = {
     apartment: string;
+    id: string;
     time: Times;
     user: string;
+    isOwn: boolean;
 }
 
 export function useReservations() {
