@@ -37,7 +37,7 @@ export function useConfirmDialog({ queryClient }: UseConfirmDialogType) {
         });
     
         const json = await res.json();
-    
+
         if (!res.ok) {
             const msg = json?.error || "Erro ao criar reserva";
     
