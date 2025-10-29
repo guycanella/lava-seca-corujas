@@ -48,8 +48,6 @@ export function ConfirmDialog({
         cancelReservationMutation,
     } = useConfirmDialog({ queryClient });
 
-    const canCancelReservation = data?.is_admin ?? false;
-
     const handleMakeReservation = () => {
         const localTime = buildLocalTime(date, time);
         const startTimeUtcIso = formatInTimeZone(
@@ -75,8 +73,7 @@ export function ConfirmDialog({
     return (
         <AlertDialogContent>
             <Show>
-                {/* <Show.When isTrue={isOwnReservation}> */}
-                <Show.When isTrue={isOwnReservation && canCancelReservation}>
+                <Show.When isTrue={isOwnReservation}>
                     <AlertDialogHeader>
                     <AlertDialogTitle>
                         Cancelar reserva
