@@ -51,6 +51,8 @@ function setupDialog(overrides?: Partial<React.ComponentProps<typeof ConfirmDial
     dayISO: "2025-10-16",
     date: new Date("2025-10-16T00:00:00"),
     onClose: vi.fn(),
+    isOwnReservation: false,
+    reservationId: "",
     ...overrides,
   };
 
@@ -262,6 +264,8 @@ describe("ConfirmDialog (integration)", () => {
               dayISO="2025-10-16"
               date={new Date("2025-10-16T00:00:00")}
               onClose={vi.fn()}
+              isOwnReservation={false}
+              reservationId=""
             />
         </AlertDialog>
       ),
@@ -278,3 +282,106 @@ describe("ConfirmDialog (integration)", () => {
     });
   });
 });
+
+// describe("useConfirmDialog hook", () => {
+//   const toast = {
+//     success: vi.fn(),
+//     error: vi.fn(),
+//   };
+//   const announce = vi.fn();
+//   const onClose = vi.fn();
+
+//   beforeEach(() => {
+//     vi.clearAllMocks();
+//     global.fetch = undefined as unknown as typeof fetch;
+//   });
+
+//   it("createReservation success", async () => {
+//     global.fetch = vi.fn().mockResolvedValue({
+//       ok: true,
+//       json: () => Promise.resolve({ id: "new-reservation-id" }),
+//     } as Response);
+
+//     const { useConfirmDialog } = await import("@/components/ConfirmDialog/useConfirmDialog");
+//     const { createReservationMutation } = useConfirmDialog();
+
+//     // Executa a mutação
+//     await createReservationMutation.mutateAsync({
+//       start_time: "2025-10-16T13:00:00.000Z",
+//       equipment: "washer",
+//       dayISO: "2025-10-16",
+//       machineEnum: "washer",
+//       announce,
+//       onClose,
+//     });
+
+//     expect(toast.success).not.toHaveBeenCalled();
+//     expect(announce).toHaveBeenCalledWith("Reserva criada com sucesso.", "polite");
+//     expect(onClose).toHaveBeenCalled();
+//   });
+
+//   it("createReservation error", async () => {
+//     global.fetch = vi.fn().mockResolvedValue({
+//       ok: false,
+//       json: () => Promise.resolve({ error: "Erro no servidor" }),
+//     } as Response);
+
+//     const { useConfirmDialog } = await import("@/components/ConfirmDialog/useConfirmDialog");
+//     const { createReservationMutation } = useConfirmDialog();
+
+//     await expect(
+//       createReservationMutation.mutateAsync({
+//         start_time: "2025-10-16T13:00:00.000Z",
+//         equipment: "washer",
+//         dayISO: "2025-10-16",
+//         machineEnum: "washer",
+//         announce,
+//         onClose,
+//       })
+//     ).rejects.toThrow("Erro no servidor");
+
+//     expect(announce).toHaveBeenCalledWith("Erro ao tentar reservar", "assertive");
+//     expect(onClose).toHaveBeenCalled();
+//   });
+
+//   it("cancelReservation success", async () => {
+//     global.fetch = vi.fn().mockResolvedValue({
+//       ok: true,
+//       json: () => Promise.resolve({ success: true }),
+//     } as Response);
+
+//     const { useConfirmDialog } = await import("@/components/ConfirmDialog/useConfirmDialog");
+//     const { cancelReservationMutation } = useConfirmDialog();
+
+//     await cancelReservationMutation.mutateAsync({
+//       id: "reservation-id",
+//       announce,
+//       onClose,
+//     });
+
+//     expect(toast.success).not.toHaveBeenCalled();
+//     expect(announce).toHaveBeenCalledWith("Reserva cancelada com sucesso.", "polite");
+//     expect(onClose).toHaveBeenCalled();
+//   });
+
+//   it("cancelReservation error", async () => {
+//     global.fetch = vi.fn().mockResolvedValue({
+//       ok: false,
+//       json: () => Promise.resolve({ error: "Erro ao cancelar" }),
+//     } as Response);
+
+//     const { useConfirmDialog } = await import("@/components/ConfirmDialog/useConfirmDialog");
+//     const { cancelReservationMutation } = useConfirmDialog();
+
+//     await expect(
+//       cancelReservationMutation.mutateAsync({
+//         id: "reservation-id",
+//         announce,
+//         onClose,
+//       })
+//     ).rejects.toThrow("Erro ao cancelar");
+
+//     expect(announce).toHaveBeenCalledWith("Erro ao tentar cancelar reservar", "assertive");
+//     expect(onClose).toHaveBeenCalled();
+//   });
+// });

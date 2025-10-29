@@ -1,6 +1,6 @@
 import { resend, RESEND_FROM, RESERVAS_BCC } from "@/lib/resend";
-import ReservationConfirmed from "@/emails/ReservationConfirmed";
-import { MachineEn } from "@/types";
+import ReservationEmail from "@/emails/ReservationEmail";
+import { MachineEn, ReservationEmailType } from "@/types";
 import { toggleMachineType } from "../utils";
 
 function formatPtBr(dt: Date, timeZone = "America/Sao_Paulo") {
@@ -26,6 +26,7 @@ export async function sendReservationEmail(options: {
     equipment: MachineEn;
     apartment_number: string;
     startUtcIso: string;
+    type: ReservationEmailType;
   }) {
     if (!resend) {
       throw new Error("Resend client not initialized. Missing RESEND_API_KEY?");
@@ -41,12 +42,13 @@ export async function sendReservationEmail(options: {
         to: [options.toEmail],
         bcc: RESERVAS_BCC ? [RESERVAS_BCC] : undefined,
         subject,
-        react: ReservationConfirmed({
+        react: ReservationEmail({
             name: options.toName,
             equipment: options.equipment,
             apartment_number: options.apartment_number,
             dateStr,
             timeStr,
+            type: options.type,
             siteUrl: "https://www.lavanderiadascorujas.com.br",
         }),
     });

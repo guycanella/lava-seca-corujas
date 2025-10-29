@@ -27,6 +27,7 @@ export async function publishReservationCreated({
             apartment_number,
             equipment,
             startUtcIso,
+            type: "confirmed",
         })
 
         if (result.error) {

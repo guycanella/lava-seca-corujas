@@ -22,7 +22,7 @@ export async function getUserInformation(
     
     const { data, error } = await supabase
         .from("v_users_with_apartment")
-        .select("id, email, name, apartment_id, apartment_number")
+        .select("id, email, name, apartment_id, apartment_number, is_admin")
         .eq("id", userId)
         .single();
 
@@ -39,6 +39,7 @@ export async function getUserInformation(
         name: data.name,
         apartment_id: data.apartment_id,
         apartment_number: data.apartment_number,
+        is_admin: data.is_admin,
       };
     
     const validated = UserResponseSchema.safeParse(payload);

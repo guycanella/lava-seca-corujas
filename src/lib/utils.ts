@@ -44,7 +44,8 @@ export const formatName = (name: string | undefined) => {
 }
 
 export const mapReservationsToTimes = (
-  data: ReservationType[] | undefined
+  data: ReservationType[] | undefined,
+  user_id = ""
 ) => {
   if (!data) return [];
 
@@ -55,11 +56,14 @@ export const mapReservationsToTimes = (
     const dateFormatted = format(dateObj, "HH:mm") as Times;
     const apartment = reservation.apartments.number;
     const user = reservation.users_app.name;
-    
+    const isOwn = reservation.user_id === user_id;
+
     const aux = {
-      apartment: apartment,
+      apartment,
+      id: reservation.id,
       time: dateFormatted,
-      user: user,
+      user,
+      isOwn,
     }
 
     acc.push(aux);
@@ -87,4 +91,12 @@ export function isErrorWithStatus(
   }
   
   return false;
+}
+
+export function buildLocalTime(day: Date, hhmm: string) {
+  const [h, m] = hhmm.split(":").map(Number);
+  const d = new Date(day);
+  d.setHours(h, m, 0, 0);
+
+  return d;
 }

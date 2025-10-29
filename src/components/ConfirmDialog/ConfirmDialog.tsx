@@ -1,7 +1,6 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { Loader2Icon } from "lucide-react";
 import { formatInTimeZone } from "date-fns-tz";
+import { useQueryClient } from "@tanstack/react-query";
 
 import {
     AlertDialogCancel,
@@ -16,8 +15,10 @@ import { useGlobalLiveRegion } from "@/contexts/GlobalLiveRegion";
 import { useUser } from "@/contexts/UserContext";
 import { MachinePtBR, MachineEn } from "@/types";
 import { Times, useReservations } from "@/app/reservar/[machine]/useReservations";
-import { toggleMachineType } from "@/lib/utils";
+import { buildLocalTime, toggleMachineType } from "@/lib/utils";
 import { Button } from "../ui/button";
+import { Show } from "../Show/Show";
+import { useConfirmDialog } from "./useConfirmDialog";
 
 type ConfirmDialogType = {
     type: MachinePtBR;
@@ -25,42 +26,8 @@ type ConfirmDialogType = {
     dayISO: string;
     date: Date;
     onClose?: () => void;
-}
-
-type CreateReservationPayload = {
-    start_time: string;
-    equipment: "washer" | "dryer";
-  };
-
-function buildLocalTime(day: Date, hhmm: string) {
-    const [h, m] = hhmm.split(":").map(Number);
-    const d = new Date(day);
-    d.setHours(h, m, 0, 0);
-
-    return d;
-}
-
-async function createReservation(payload: CreateReservationPayload) {
-    const res = await fetch("/api/reservations", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-    });
-
-    const json = await res.json();
-
-    if (!res.ok) {
-        const msg = json?.error || "Erro ao criar reserva";
-
-        if (res.status === 409 || msg.includes("duplicate key") || msg.includes("já existe")) {
-            throw new Error("Esse horário acabou de ser reservado por outra pessoa.");
-        }
-
-        throw new Error(msg);
-    }
-
-    return json;
+    isOwnReservation: boolean;
+    reservationId: string;
 }
 
 export function ConfirmDialog({
@@ -69,88 +36,131 @@ export function ConfirmDialog({
     dayISO,
     date,
     onClose,
+    isOwnReservation,
+    reservationId,
 }: ConfirmDialogType) {
+    const queryClient = useQueryClient();
     const { data } = useUser();
     const { machineEnum } = useReservations();
     const { announce } = useGlobalLiveRegion();
-
-    const queryClient = useQueryClient();
-
-    const mutation = useMutation({
-        mutationFn: (payload: CreateReservationPayload) => 
-            createReservation(payload),
-
-        onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: ["reservations", dayISO, machineEnum],
-            });
-            toast.success("Reserva criada com sucesso");
-            announce("Reserva criada com sucesso.", "polite");
-            onClose?.();
-        },
-
-        onError: (e: Error) => {
-            toast.error("Erro ao tentar reservar", {
-                description: `Erro: ${e?.message}`,
-            })
-            announce("Erro ao tentar reservar", "assertive");
-            onClose?.();
-        },
-    });
+    const {
+        createReservationMutation,
+        cancelReservationMutation,
+    } = useConfirmDialog({ queryClient });
 
     const handleMakeReservation = () => {
         const localTime = buildLocalTime(date, time);
-        const startTimeUtcIso = formatInTimeZone(localTime, "UTC", "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+        const startTimeUtcIso = formatInTimeZone(
+            localTime, 
+            "UTC", 
+            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+        );
 
-        mutation.mutate({
+        createReservationMutation.mutate({
             start_time: startTimeUtcIso,
             equipment: toggleMachineType(type) as MachineEn,
+            dayISO,
+            machineEnum,
+            announce,
+            onClose,
         });
+    }
+
+    const handleCancelReservation = (id: string) => {
+        cancelReservationMutation.mutate({ id, announce, onClose });
     }
 
     return (
         <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>
-                    Confirmar reserva
-                </AlertDialogTitle>
+            <Show>
+                <Show.When isTrue={isOwnReservation}>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>
+                        Cancelar reserva
+                    </AlertDialogTitle>
 
-                <AlertDialogDescription>
-                    Reservar a {type} para o apartamento{" "}
-                    {data?.apartment_number} às {time}?
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            
-            <AlertDialogFooter>
-                <AlertDialogCancel
-                    type="button"
-                    disabled={mutation.isPending}
-                    aria-disabled={mutation.isPending}
-                >
-                    Cancelar
-                </AlertDialogCancel>
-                <Button
-                    type="button"
-                    onClick={handleMakeReservation}
-                    disabled={mutation.isPending}
-                    aria-disabled={mutation.isPending}
-                    aria-label={
-                        mutation.isPending 
-                            ? "Reservando…" 
-                            : "Confirmar reserva"
-                    }
-                >
-                    {
-                        mutation.isPending 
-                            ? <>
-                                <Loader2Icon
-                                    className="size-4 animate-spin"
-                                /> Reservando...
-                              </> 
-                            : "Reservar"
-                    }
-                </Button>
-            </AlertDialogFooter>
+                    <AlertDialogDescription>
+                        Cancelar a reserva da {type} para o apartamento{" "}
+                        {data?.apartment_number} às {time}?
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                
+                <AlertDialogFooter>
+                    <AlertDialogCancel
+                        type="button"
+                        disabled={cancelReservationMutation.isPending}
+                        aria-disabled={cancelReservationMutation.isPending}
+                    >
+                        Fechar
+                    </AlertDialogCancel>
+                    <Button
+                        type="button"
+                        onClick={() => handleCancelReservation(reservationId)}
+                        disabled={cancelReservationMutation.isPending}
+                        aria-disabled={cancelReservationMutation.isPending}
+                        aria-label={
+                            cancelReservationMutation.isPending 
+                                ? "Cancelando…" 
+                                : "Cancelar reserva"
+                        }
+                    >
+                        {
+                            cancelReservationMutation.isPending 
+                                ? <>
+                                    <Loader2Icon
+                                        className="size-4 animate-spin"
+                                    /> Cancelando...
+                                </> 
+                                : "Cancelar reserva"
+                        }
+                    </Button>
+                </AlertDialogFooter>
+                </Show.When>
+
+                <Show.Else>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>
+                        Confirmar reserva
+                    </AlertDialogTitle>
+
+                    <AlertDialogDescription>
+                        Reservar a {type} para o apartamento{" "}
+                        {data?.apartment_number} às {time}?
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                
+                <AlertDialogFooter>
+                    <AlertDialogCancel
+                        type="button"
+                        disabled={createReservationMutation.isPending}
+                        aria-disabled={createReservationMutation.isPending}
+                    >
+                        Cancelar
+                    </AlertDialogCancel>
+                    <Button
+                        type="button"
+                        onClick={handleMakeReservation}
+                        disabled={createReservationMutation.isPending}
+                        aria-disabled={createReservationMutation.isPending}
+                        aria-label={
+                            createReservationMutation.isPending 
+                                ? "Reservando…" 
+                                : "Confirmar reserva"
+                        }
+                    >
+                        {
+                            createReservationMutation.isPending 
+                                ? <>
+                                    <Loader2Icon
+                                        className="size-4 animate-spin"
+                                    /> Reservando...
+                                </> 
+                                : "Reservar"
+                        }
+                    </Button>
+                </AlertDialogFooter>
+                </Show.Else>
+            </Show>
         </AlertDialogContent>
     )
 }

@@ -1,5 +1,5 @@
 import { toggleMachineType } from "@/lib/utils";
-import { MachineEn } from "@/types";
+import { MachineEn, ReservationEmailType } from "@/types";
 import {
     Html,
     Head,
@@ -12,31 +12,36 @@ import {
     Link,
 } from "@react-email/components";
 
-type ReservationConfirmedProps = {
+
+
+type ReservationEmailProps = {
     name: string;
     equipment: MachineEn;
     apartment_number: string;
     dateStr: string;
     timeStr: string;
     siteUrl?: string;
+    type: ReservationEmailType;
 }
 
-export default function ReservationConfirmed({
+export default function ReservationEmail({
     name,
     equipment,
     apartment_number,
     dateStr,
     timeStr,
+    type,
     siteUrl = "https://www.lavanderiadascorujas.com.br",
-}: ReservationConfirmedProps) {
+}: ReservationEmailProps) {
     const brandColor = "hsl(146, 47%, 65%)";
 
     const equipmentPtBR = toggleMachineType(equipment);
+    const emailType = type === "confirmed" ? "confirmada" : "cancelada";
 
     return (
         <Html>
             <Head />
-            <Preview>Sua reserva da {equipmentPtBR} foi confirmada</Preview>
+            <Preview>Sua reserva da {equipmentPtBR} foi {emailType}</Preview>
             <Body
                 style={{
                     fontFamily: "Arial, Helvetica, sans-serif",
@@ -80,17 +85,19 @@ export default function ReservationConfirmed({
                         </Text>
 
                         <Text style={{ fontSize: 16, lineHeight: "24px" }}>
-                            Sua reserva da <strong>{equipmentPtBR}</strong> foi 
-                            confirmada para o apartamento{" "} 
+                            Sua reserva da <strong>{equipmentPtBR}</strong> foi{" "} 
+                            {emailType} para o apartamento{" "} 
                             <strong>{apartment_number}</strong>{" "} 
                             em <strong>{dateStr}</strong> às{" "} 
                             <strong>{timeStr}</strong>.
                         </Text>
 
-                        <Text style={{ fontSize: 14, color: "#6b7280" }}>
-                            Caso precise alterar ou cancelar, acesse o{" "}
-                            <Link href={siteUrl}>sistema</Link>.
-                        </Text>
+                        {type === "confirmed" && (
+                            <Text style={{ fontSize: 14, color: "#6b7280" }}>
+                                Caso precise alterar ou cancelar, acesse o{" "}
+                                <Link href={siteUrl}>sistema</Link>.
+                            </Text>
+                        )}
                     </Section>
 
                     <Hr style={{ borderColor: "#e5e7eb", margin: "16px 0" }} />

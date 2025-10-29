@@ -54,6 +54,14 @@ export const ReservationSchema = z.object({
     users_app: UsersSchema,
 });
 
+export const CancelReservationSchema = z.object({
+    user_id: z.uuid(),
+    equipment: MachineSchema,
+    start_time: isoDateSchema,
+    apartments: z.object({ number: z.string() }),
+    users_app: UsersSchema,
+})
+
 export const ReservationArraySchema = z.array(ReservationSchema);
 
 export const UserResponseSchema = z.object({
@@ -62,11 +70,16 @@ export const UserResponseSchema = z.object({
     email: z.email(),
     apartment_id: z.uuid(),
     apartment_number: z.string(),
+    is_admin: z.boolean(),
 });
 
 export const BodyLoginSchema = z.object({
     email: z.email(),
     password: z.string(),
+});
+
+export const DeleteReservationSchema = z.object({
+    id: z.uuid(),
 });
 
 export type FormValues = z.infer<typeof formSchema>;
@@ -77,3 +90,5 @@ export type MachinesType = MachinePtBR | MachineEn;
 export type UsersAppType = z.infer<typeof UsersSchema>;
 export type ReservationType = z.infer<typeof ReservationSchema>;
 export type UserResponseType = z.infer<typeof UserResponseSchema>;
+export type Politeness = "polite" | "assertive";
+export type ReservationEmailType = "confirmed" | "cancelled";
