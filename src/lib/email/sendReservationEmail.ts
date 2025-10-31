@@ -35,7 +35,13 @@ export async function sendReservationEmail(options: {
     const start = new Date(options.startUtcIso);
     const { dateStr, timeStr } = formatPtBr(start);
   
-    const subject = `Sua reserva da ${toggleMachineType(options.equipment)} foi confirmada`;
+    const subject = `Sua reserva da ${
+      toggleMachineType(options.equipment)
+    } foi ${
+      options.type === "cancelled" 
+        ? "cancelada" 
+        : "confirmada"
+    }`;
 
     const result = await resend.emails.send({
         from: RESEND_FROM,
