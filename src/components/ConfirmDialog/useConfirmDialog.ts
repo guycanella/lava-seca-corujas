@@ -14,11 +14,8 @@ type CreateReservationMutationType = {
 
 type CancelReservationMutationType = 
     Omit<CreateReservationMutationType, 
-        | "start_time" 
-        | "equipment" 
-        | "dayISO" 
-        | "machineEnum" 
-    > & {
+        "start_time" 
+        | "equipment"> & {
     id: string;
 }
 
@@ -99,9 +96,14 @@ export function useConfirmDialog({ queryClient }: UseConfirmDialogType) {
         mutationFn: ({ id }: CancelReservationMutationType) =>
             cancelReservation({ id }),
 
-        onSuccess: (_, { announce, onClose }) => {
+        onSuccess: (_, {
+            dayISO,
+            machineEnum,
+            announce,
+            onClose,
+        }) => {
             queryClient.invalidateQueries({
-                queryKey: ["reservations"],
+                queryKey: ["reservations", dayISO, machineEnum],
             });
 
             toast.success("Reserva cancelada com sucesso");
