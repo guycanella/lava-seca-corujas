@@ -64,15 +64,25 @@ export async function DELETE(_: Request, { params }: Props) {
         }, { status: 403 });
     }
 
-    const { error: deleteError } = await supabase
+    const {
+        data: deletedReservation,
+        error: deleteError,
+    } = await supabase
         .from('reservations')
         .delete()
         .eq('id', reservation_id)
+        .select('id')
 
     if (deleteError) {
         return NextResponse.json({
             error: deleteError.message
         }, { status: 500 });
+    }
+
+    if (!deletedReservation || deletedReservation.length === 0) {
+        return NextResponse.json({
+            error: "Reserva não pôde ser removida"
+        }, { status: 403 });
     }
 
     const parsedReservation = CancelReservationSchema.safeParse(reservation);
