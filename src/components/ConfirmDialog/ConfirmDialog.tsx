@@ -67,7 +67,13 @@ export function ConfirmDialog({
     }
 
     const handleCancelReservation = (id: string) => {
-        cancelReservationMutation.mutate({ id, announce, onClose });
+        cancelReservationMutation.mutate({
+            id,
+            dayISO,
+            machineEnum,
+            announce,
+            onClose,
+        });
     }
 
     return (

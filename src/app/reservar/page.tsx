@@ -39,7 +39,7 @@ export default function ReservarHome() {
             className={lavadoraLoading ? 'opacity-0': 'opacity-100'}
             width={200}
             height={200}
-            onLoadingComplete={() => setLavadoraLoading(false)}
+            onLoad={() => setLavadoraLoading(false)}
             placeholder="empty"
             priority
             decoding="async"
@@ -73,7 +73,7 @@ export default function ReservarHome() {
             className={secadoraLoading ? 'opacity-0': 'opacity-100'}
             width={200}
             height={200}
-            onLoadingComplete={() => setSecadoraLoading(false)}
+            onLoad={() => setSecadoraLoading(false)}
             placeholder="empty"
             priority
             decoding="async"
