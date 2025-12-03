@@ -1,55 +1,15 @@
 "use client"
 
-import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2Icon } from "lucide-react";
-import { toast } from "sonner";
-
 import { useUser } from "@/contexts/UserContext";
-import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
 import { formatName } from "@/lib/utils";
-
-async function logout() {
-    const res = await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-    });
-
-    const json = await res.json();
-
-    if (!res.ok) {
-        throw new Error(json?.error || "Erro ao fazer logout");
-    }
-
-    return json;
-}
-
+import LogoutButton from "../LogoutButton/LogoutButton";
+import { useLogoutButton } from "../LogoutButton/useLogoutButton";
+import LoginButton from "../LoginButton/LoginButton";
 
 export function Header() {
-    const { data, isLoading } = useUser();
-    const queryClient = useQueryClient();
-    const router = useRouter();
-
-    const { mutate: logoutMutation, isPending } = useMutation({
-        mutationFn: logout,
-
-        onSuccess: async () => {
-            await queryClient.invalidateQueries({ queryKey: ["user"] });
-            queryClient.clear();
-            router.replace("/");
-        },
-
-        onError: (e: Error) => {
-            toast.error("Erro ao fazer logout", {
-                description: e?.message || "Tente novamente",
-            });
-        },
-    });
-
-    const handleLogout = () => {
-        logoutMutation();
-    }
+    const { data, isLoading } = useUser()
+    const { isPending } = useLogoutButton()
 
     return (
         <header
@@ -81,22 +41,10 @@ export function Header() {
                     }
                 </div>
             </div>
-            <div>
-                <Button
-                    onClick={handleLogout}
-                    disabled={isPending}
-                    aria-disabled={isPending}
-                    aria-label={isPending ? "Saindo, aguarde..." : "Sair da conta"}
-                >
-                    {
-                        isPending ? (
-                            <>
-                                <Loader2Icon className="size-4 animate-spin" aria-hidden="true" />
-                                Saindo...
-                            </>
-                        ) : "Logout"
-                    }
-                </Button>
+            <div className="flex flex-col gap-2">
+                <LoginButton />
+
+                <LogoutButton />
             </div>
         </header>
     )
