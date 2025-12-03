@@ -82,6 +82,21 @@ export const DeleteReservationSchema = z.object({
     id: z.uuid(),
 });
 
+export const DayOfWeekStatsSchema = z.object({
+    dayOfWeek: z.number().min(0).max(6), // 0 = Sunday, 6 = Saturday
+    count: z.number(),
+});
+
+export const UserLastReservationSchema = z.object({
+    date: z.string(), // format YYYY-MM-DD
+    start_time: isoDateSchema,
+});
+
+export const StatsResponseSchema = z.object({
+    weekdayStats: z.array(DayOfWeekStatsSchema),
+    userLastReservations: z.array(UserLastReservationSchema).max(3),
+});
+
 export type FormValues = z.infer<typeof formSchema>;
 export type PayloadLoginType = z.infer<typeof payloadLoginSchema>;
 export type MachinePtBR = 'lavadora' | 'secadora';
@@ -92,3 +107,6 @@ export type ReservationType = z.infer<typeof ReservationSchema>;
 export type UserResponseType = z.infer<typeof UserResponseSchema>;
 export type Politeness = "polite" | "assertive";
 export type ReservationEmailType = "confirmed" | "cancelled";
+export type DayOfWeekStatsType = z.infer<typeof DayOfWeekStatsSchema>;
+export type UserLastReservationType = z.infer<typeof UserLastReservationSchema>;
+export type StatsResponseType = z.infer<typeof StatsResponseSchema>;
