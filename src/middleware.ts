@@ -1,13 +1,15 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// Altere para true para ativar o modo de manutenção
+const MAINTENANCE_MODE = true
+
 const PUBLIC_PATHS = ['/login', '/api/auth/callback', '/manutencao']
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  const isMaintenanceMode = process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true'
-  if (isMaintenanceMode && pathname !== '/manutencao') {
+  if (MAINTENANCE_MODE && pathname !== '/manutencao') {
     const url = request.nextUrl.clone()
     url.pathname = '/manutencao'
     return NextResponse.redirect(url)

@@ -54,8 +54,6 @@ RESEND_FROM="Sender Name <noreply@yourdomain.com>"
 RESEND_API_KEY=<your-resend-api-key>
 RESERVAS_BCC=<optional-bcc-email>  # Optional BCC for all reservation emails
 
-# Maintenance mode (set to 'true' to redirect all routes to /manutencao)
-NEXT_PUBLIC_MAINTENANCE_MODE=false
 ```
 
 ## Architecture
@@ -68,7 +66,7 @@ NEXT_PUBLIC_MAINTENANCE_MODE=false
   - `supabaseServer()` (src/lib/supabaseServer.ts) - Server-side with service role key
 - Middleware (src/middleware.ts) protects routes: `/`, `/reservar/:path*`, `/conta`, `/admin` (configurable via matcher)
 - Public paths: `/login`, `/api/auth/callback`, `/manutencao`
-- Maintenance mode: set `NEXT_PUBLIC_MAINTENANCE_MODE=true` in `.env.local` (or Vercel dashboard) to redirect all routes to `/manutencao`
+- Maintenance mode: altere a constante `MAINTENANCE_MODE` em `src/middleware.ts` para `true` e faça deploy
 - Redirects unauthenticated users to `/login` with `redirectTo` parameter
 - Session verification happens at middleware level using Supabase SSR cookies
 
