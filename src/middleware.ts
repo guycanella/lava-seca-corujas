@@ -1,10 +1,17 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-const PUBLIC_PATHS = ['/login', '/api/auth/callback']
+const PUBLIC_PATHS = ['/login', '/api/auth/callback', '/manutencao']
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  const isMaintenanceMode = process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true'
+  if (isMaintenanceMode && pathname !== '/manutencao') {
+    const url = request.nextUrl.clone()
+    url.pathname = '/manutencao'
+    return NextResponse.redirect(url)
+  }
 
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
     return NextResponse.next()
@@ -55,5 +62,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/reservar', '/admin'],
+  matcher: ['/', '/reservar/:path*', '/conta', '/admin', '/manutencao'],
 }

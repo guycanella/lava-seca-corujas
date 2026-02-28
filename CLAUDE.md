@@ -53,6 +53,9 @@ SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
 RESEND_FROM="Sender Name <noreply@yourdomain.com>"
 RESEND_API_KEY=<your-resend-api-key>
 RESERVAS_BCC=<optional-bcc-email>  # Optional BCC for all reservation emails
+
+# Maintenance mode (set to 'true' to redirect all routes to /manutencao)
+NEXT_PUBLIC_MAINTENANCE_MODE=false
 ```
 
 ## Architecture
@@ -63,8 +66,9 @@ RESERVAS_BCC=<optional-bcc-email>  # Optional BCC for all reservation emails
 - Two Supabase clients:
   - `supabaseBrowser()` (src/lib/supabaseClient.ts) - Client-side with anon key
   - `supabaseServer()` (src/lib/supabaseServer.ts) - Server-side with service role key
-- Middleware (src/middleware.ts) protects routes: `/`, `/reservar` (configurable via matcher)
-- Public paths: `/login`, `/api/auth/callback`
+- Middleware (src/middleware.ts) protects routes: `/`, `/reservar/:path*`, `/conta`, `/admin` (configurable via matcher)
+- Public paths: `/login`, `/api/auth/callback`, `/manutencao`
+- Maintenance mode: set `NEXT_PUBLIC_MAINTENANCE_MODE=true` in `.env.local` (or Vercel dashboard) to redirect all routes to `/manutencao`
 - Redirects unauthenticated users to `/login` with `redirectTo` parameter
 - Session verification happens at middleware level using Supabase SSR cookies
 
@@ -172,10 +176,15 @@ All routes use Zod schemas for validation and return appropriate error responses
 ### Testing
 
 - Test files use `.test.ts` or `.test.tsx` suffix
-- Setup file: vitest.setup.ts
+- Setup file: vitest.setup.ts (mocks `next/image`, auto cleanup after each test)
 - Uses jsdom environment for DOM testing
-- Custom render utility in src/lib/render.tsx for wrapping components with providers
 - Run single test file: `npm test -- path/to/file.test.ts`
+- `renderWithProviders()` in src/lib/render.tsx wraps components with providers; options:
+  - `withToaster` - include sonner Toaster
+  - `withCookieConsent` - include cookie consent dialog
+  - `withTheme` - include ThemeProvider
+  - `withAppProviders` - full provider stack (Providers + UserProvider + GlobalLiveRegionProvider)
+  - `queryClient` - custom QueryClient instance (default: `{ retry: false }`)
 
 ### Accessibility
 
@@ -203,6 +212,13 @@ The application prioritizes accessibility:
 - Utility: `cn()` function in src/lib/utils.ts for merging classes
 - Font: Open Sans from Google Fonts
 
+### Cookie Consent
+
+- `CookieConsentDialog` component auto-shows if no consent found
+- `setCookieConsent()` / `getCookieConsent()` in src/lib/cookieConsent.ts
+- Cookie name: `cookie-consent`, values: `"accepted" | "declined"`, duration: 180 days
+- Falls back to localStorage if cookie not found
+
 ## Database Schema
 
 Tables in Supabase:
@@ -229,12 +245,30 @@ Tables in Supabase:
 - `created_at` (TIMESTAMPTZ)
 - **UNIQUE constraint** on (equipment, start_time) - prevents double booking
 
+**v_users_with_apartment** (SQL view, must be created manually in Supabase):
+- Used by `getUserInformation()` to fetch user + apartment data in a single query
+- Returns: `id, email, name, apartment_id, apartment_number, is_admin`
+
 ## Custom Hooks
 
-- `useStats()` (src/hooks/useStats.ts) - TanStack Query hook for fetching usage statistics
+- `useStats()` (src/app/conta/useStats.ts) - TanStack Query hook for fetching usage statistics
   - Queries `/api/stats` endpoint
   - 5-minute cache (staleTime)
   - Returns weekday statistics and user's last 3 reservations
+- `useReservations()` (src/app/reservar/[machine]/useReservations.ts) - Manages reservation page state
+  - Extracts and validates machine type from URL params (redirects to 404 if invalid)
+  - Returns `TIMES` array (24 hourly slots 00:00–23:00), date boundaries, machine enum
+- `useConfirmDialog()` (src/components/ConfirmDialog/useConfirmDialog.ts) - Handles create/cancel mutations
+  - Manages `createReservationMutation` and `cancelReservationMutation`
+  - Handles 409 conflict errors, invalidates query cache on success
+- `useLogoutButton()` (src/components/LogoutButton/useLogoutButton.ts) - Logout with cache clearing
+  - Clears entire query cache on success, redirects to `/`
+- `useUser()` (src/contexts/UserContext.tsx) - Current user from context, uses `useContextSelector`
+- `useTheme()` (src/contexts/ThemeContext.tsx) - Custom theme management (NOT next-themes)
+  - Persists to localStorage key `"theme"`, responds to system preference via `matchMedia`
+  - Theme values: `"light" | "dark" | "system"`; methods: `setTheme()`, `toggleDark(force?)`
+- `useGlobalLiveRegion()` (src/contexts/GlobalLiveRegion.tsx) - Accessibility announcements
+  - Supports `"polite"` and `"assertive"` ARIA live regions, auto-clears after 3 seconds
 
 ## Development Notes
 
