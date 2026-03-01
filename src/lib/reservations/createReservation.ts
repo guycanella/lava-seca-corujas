@@ -7,12 +7,14 @@ type CreateReservationInput = {
     userId: string;
     startUtcIso: string;
     equipment: MachineEn;
+    machineId: string;
 };
 
 export async function createReservation({
   userId,
   startUtcIso,
   equipment,
+  machineId,
 }: CreateReservationInput) {
     const supabase = await supabaseServer();
     const userData = await getUserInformation(userId);
@@ -34,15 +36,17 @@ export async function createReservation({
                 user_id: userData.data.id,
                 apartment_id: userData.data.apartment_id,
                 equipment,
+                machine_id: machineId,
                 start_time: startUtc.toISOString(),
                 end_time: endUtc.toISOString(),
             },
         ])
         .select(
             `
-            id, user_id, apartment_id, equipment, start_time, end_time,
+            id, user_id, apartment_id, equipment, machine_id, start_time, end_time,
             apartments(number),
-            users_app(name, email)
+            users_app(name, email),
+            machines(id, label)
             `
         )
         .single();
@@ -67,5 +71,6 @@ export async function createReservation({
         email: parsed.data.users_app.email,
         apartment_number: parsed.data.apartments.number,
         equipment: parsed.data.equipment,
+        machine_label: parsed.data.machines.label,
     };
 }

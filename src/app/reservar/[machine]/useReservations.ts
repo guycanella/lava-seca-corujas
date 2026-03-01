@@ -22,6 +22,8 @@ export type ReservationTimes = {
     time: Times;
     user: string;
     isOwn: boolean;
+    machine_id: string;
+    machine_label: string;
 }
 
 export function useReservations() {

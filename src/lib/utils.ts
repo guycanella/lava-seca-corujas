@@ -43,6 +43,8 @@ export const formatName = (name: string | undefined) => {
   return name.split(" ")[0];
 }
 
+const MACHINES_PER_TYPE = 2;
+
 export const mapReservationsToTimes = (
   data: ReservationType[] | undefined,
   user_id = ""
@@ -64,6 +66,8 @@ export const mapReservationsToTimes = (
       time: dateFormatted,
       user,
       isOwn,
+      machine_id: reservation.machine_id,
+      machine_label: reservation.machines.label,
     }
 
     acc.push(aux);
@@ -75,7 +79,14 @@ export const mapReservationsToTimes = (
 export const getUnavailableTimes = (reservations: ReservationTimes[]) => {
   if (reservations.length === 0) return [];
 
-  return reservations.map((reservation) => reservation.time);
+  const countByTime = reservations.reduce((acc, r) => {
+    acc[r.time] = (acc[r.time] ?? 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  return Object.entries(countByTime)
+    .filter(([, count]) => count >= MACHINES_PER_TYPE)
+    .map(([time]) => time);
 }
 
 export function isErrorWithStatus(

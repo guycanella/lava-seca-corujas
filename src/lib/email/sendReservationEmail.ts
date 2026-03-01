@@ -1,7 +1,6 @@
 import { resend, RESEND_FROM, RESERVAS_BCC } from "@/lib/resend";
 import ReservationEmail from "@/emails/ReservationEmail";
-import { MachineEn, ReservationEmailType } from "@/types";
-import { toggleMachineType } from "../utils";
+import { ReservationEmailType } from "@/types";
 
 function formatPtBr(dt: Date, timeZone = "America/Sao_Paulo") {
     const d = new Intl.DateTimeFormat("pt-BR", {
@@ -23,7 +22,7 @@ function formatPtBr(dt: Date, timeZone = "America/Sao_Paulo") {
 export async function sendReservationEmail(options: {
     toEmail: string;
     toName: string;
-    equipment: MachineEn;
+    machineLabel: string;
     apartment_number: string;
     startUtcIso: string;
     type: ReservationEmailType;
@@ -31,15 +30,13 @@ export async function sendReservationEmail(options: {
     if (!resend) {
       throw new Error("Resend client not initialized. Missing RESEND_API_KEY?");
     }
-  
+
     const start = new Date(options.startUtcIso);
     const { dateStr, timeStr } = formatPtBr(start);
-  
-    const subject = `Sua reserva da ${
-      toggleMachineType(options.equipment)
-    } foi ${
-      options.type === "cancelled" 
-        ? "cancelada" 
+
+    const subject = `Sua reserva da ${options.machineLabel} foi ${
+      options.type === "cancelled"
+        ? "cancelada"
         : "confirmada"
     }`;
 
@@ -50,7 +47,7 @@ export async function sendReservationEmail(options: {
         subject,
         react: ReservationEmail({
             name: options.toName,
-            equipment: options.equipment,
+            machineLabel: options.machineLabel,
             apartment_number: options.apartment_number,
             dateStr,
             timeStr,

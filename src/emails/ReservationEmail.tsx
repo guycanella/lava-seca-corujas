@@ -1,5 +1,4 @@
-import { toggleMachineType } from "@/lib/utils";
-import { MachineEn, ReservationEmailType } from "@/types";
+import { ReservationEmailType } from "@/types";
 import {
     Html,
     Head,
@@ -16,7 +15,7 @@ import {
 
 type ReservationEmailProps = {
     name: string;
-    equipment: MachineEn;
+    machineLabel: string;
     apartment_number: string;
     dateStr: string;
     timeStr: string;
@@ -26,7 +25,7 @@ type ReservationEmailProps = {
 
 export default function ReservationEmail({
     name,
-    equipment,
+    machineLabel,
     apartment_number,
     dateStr,
     timeStr,
@@ -35,13 +34,12 @@ export default function ReservationEmail({
 }: ReservationEmailProps) {
     const brandColor = "hsl(146, 47%, 65%)";
 
-    const equipmentPtBR = toggleMachineType(equipment);
     const emailType = type === "confirmed" ? "confirmada" : "cancelada";
 
     return (
         <Html>
             <Head />
-            <Preview>Sua reserva da {equipmentPtBR} foi {emailType}</Preview>
+            <Preview>Sua reserva da {machineLabel} foi {emailType}</Preview>
             <Body
                 style={{
                     fontFamily: "Arial, Helvetica, sans-serif",
@@ -85,8 +83,8 @@ export default function ReservationEmail({
                         </Text>
 
                         <Text style={{ fontSize: 16, lineHeight: "24px" }}>
-                            Sua reserva da <strong>{equipmentPtBR}</strong> foi{" "} 
-                            {emailType} para o apartamento{" "} 
+                            Sua reserva da <strong>{machineLabel}</strong> foi{" "}
+                            {emailType} para o apartamento{" "}
                             <strong>{apartment_number}</strong>{" "} 
                             em <strong>{dateStr}</strong> às{" "} 
                             <strong>{timeStr}</strong>.

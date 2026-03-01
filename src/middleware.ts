@@ -1,8 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-// Altere para true para ativar o modo de manutenção
-const MAINTENANCE_MODE = true
+const MAINTENANCE_MODE = process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true'
 
 const PUBLIC_PATHS = ['/login', '/api/auth/callback', '/manutencao']
 

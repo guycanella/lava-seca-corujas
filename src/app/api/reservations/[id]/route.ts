@@ -39,8 +39,10 @@ export async function DELETE(_: Request, { params }: Props) {
             user_id,
             start_time,
             equipment,
+            machine_id,
             apartments!inner(number),
-            users_app!inner(name, email)
+            users_app!inner(name, email),
+            machines!inner(id, label)
         `)
         .eq('id', reservation_id)
         .single()
@@ -90,17 +92,17 @@ export async function DELETE(_: Request, { params }: Props) {
         return zodErrorResponse(parsedReservation.error);
 
     const {
-        equipment,
         start_time,
         users_app: { name, email },
-        apartments: { number }
+        apartments: { number },
+        machines: { label: machine_label },
     } = parsedReservation.data;
 
     await publishReservationCancelled({
         name,
         email,
         apartment_number: number,
-        equipment,
+        machine_label,
         startUtcIso: start_time,
     })
 

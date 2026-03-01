@@ -8,7 +8,7 @@ import {
     ReservationArraySchema,
 } from '@/types';
 
-import { isErrorWithStatus, toggleMachineType, zodErrorResponse } from '@/lib/utils';
+import { isErrorWithStatus, zodErrorResponse } from '@/lib/utils';
 import { createReservation } from '@/lib/reservations/createReservation';
 import { publishReservationCreated } from '@/lib/reservations/publishReservationCreated';
 
@@ -38,10 +38,12 @@ export async function GET(req: Request) {
             user_id,
             apartment_id,
             equipment,
+            machine_id,
             start_time,
             end_time,
             apartments!inner(number),
-            users_app!inner(name, email)
+            users_app!inner(name, email),
+            machines!inner(id, label)
         `)
         .gte('start_time', dayStartUtc.toISOString())
         .lt('start_time', dayEndUtc.toISOString())
@@ -82,18 +84,19 @@ export async function POST(req: Request) {
             name,
             email,
             apartment_number,
-            equipment,
+            machine_label,
         } = await createReservation({
             userId: user.id,
             startUtcIso: parsed.data.start_time,
             equipment: parsed.data.equipment,
+            machineId: parsed.data.machine_id,
         });
 
         await publishReservationCreated({
             name,
             email,
             apartment_number,
-            equipment,
+            machine_label,
             startUtcIso: parsed.data.start_time,
         })
 
@@ -101,7 +104,7 @@ export async function POST(req: Request) {
             name,
             email,
             apartment_number,
-            equipment: toggleMachineType(equipment),
+            machine_label,
             start_time: parsed.data.start_time,
         }, { status: 201 });
     } catch(error: unknown) {

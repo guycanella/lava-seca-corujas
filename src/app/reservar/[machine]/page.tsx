@@ -15,7 +15,7 @@ const CalendarClient = dynamic(
 
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton"
-import { ReservationType } from "@/types";
+import { MachineRecordType, ReservationType } from "@/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useReservations } from "./useReservations";
 import { Show } from "@/components/Show/Show";
@@ -43,12 +43,12 @@ export default function CalendarMachinePage() {
         type,
         renderNotFound
     } = useReservations();
-    
+
     const [date, setDate] = useState<Date>(startOfToday);
     const [openTime, setOpenTime] = useState<string | null>(null);
     const [debouncedDate, setDebouncedDate] = useState<Date>(date);
     const dayISO = debouncedDate.toISOString().slice(0,10)
-    
+
     renderNotFound();
 
     const {
@@ -65,6 +65,20 @@ export default function CalendarMachinePage() {
         refetchOnWindowFocus: false,
     })
 
+    const { data: allMachines } = useQuery<MachineRecordType[]>({
+        queryKey: ["machines", machineEnum],
+        queryFn: async () => {
+            const res = await fetch(`/api/machines?type=${machineEnum}`, {
+                credentials: "include",
+                cache: "no-store",
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json?.error || "Erro ao carregar máquinas");
+            return json;
+        },
+        staleTime: Infinity,
+    })
+
     const reservations = useMemo(() => {
         return mapReservationsToTimes(data, userData?.id);
     }, [data, userData?.id])
@@ -75,6 +89,11 @@ export default function CalendarMachinePage() {
 
     const isToday = isSameDayDateFns(date, new Date());
     const currentHHMM = format(new Date(), "HH:mm");
+
+    const abbreviateMachineLabel = (label: string) => {
+        const parts = label.split(" ");
+        return `${parts[0][0]}${parts[1]}`;
+    };
 
     useEffect(() => {
         const id = setTimeout(() => setDebouncedDate(date), 250);
@@ -119,8 +138,8 @@ export default function CalendarMachinePage() {
                     />
 
                     <p id="calendar-help" className="sr-only">
-                        Datas passadas e além do limite estão desabilitadas. 
-                        Use as setas para navegar pelos meses. 
+                        Datas passadas e além do limite estão desabilitadas.
+                        Use as setas para navegar pelos meses.
                         Selecione uma data para ver os horários disponíveis.
                     </p>
                 </section>
@@ -217,24 +236,39 @@ export default function CalendarMachinePage() {
                             >
                                 {TIMES.map((time) => {
                                     const passed = isToday && time <= currentHHMM;
-                                    const isOccupied = unavailableTimes.includes(time);
-                                    const occupiedTime = reservations.find((reservation) => reservation.time === time);
-                                    const isOwnReservation = occupiedTime?.isOwn === true;
-                                    const disabled = passed || (isOccupied && !isOwnReservation);
-                                    let ariaLabel = "";
+                                    const reservationsAtTime = reservations.filter(r => r.time === time);
+                                    const isFullyOccupied = unavailableTimes.includes(time);
+                                    const isPartiallyOccupied = !isFullyOccupied && reservationsAtTime.length > 0;
+                                    const userReservation = reservationsAtTime.find(r => r.isOwn);
+                                    const isOwnReservation = !!userReservation;
+
+                                    const reservedMachineIds = new Set(reservationsAtTime.map(r => r.machine_id));
+                                    const availableMachines = (allMachines ?? []).filter(
+                                        m => !reservedMachineIds.has(m.id)
+                                    );
+
+                                    const disabled = passed || (isFullyOccupied && !isOwnReservation);
+
+                                    const occupantText = reservationsAtTime
+                                        .map(r => `${r.apartment} ${abbreviateMachineLabel(r.machine_label)}`)
+                                        .join(" | ");
+
+                                    const occupantTextClass = isOwnReservation
+                                        ? ""
+                                        : "text-amber-600 dark:text-amber-400";
+
                                     let buttonsClassName = "h-auto py-1";
+                                    if (isOwnReservation) buttonsClassName += " bg-blue-300";
 
-                                     if (isOwnReservation) {
-                                        buttonsClassName += " bg-blue-300";
-                                     }
-
-                                    if (isOccupied) {
-                                        ariaLabel = `
-                                            Horário ${time} já está ocupado pelo 
-                                            apartamento ${occupiedTime?.apartment}
-                                        `;
+                                    let ariaLabel = "";
+                                    if (isFullyOccupied && !isOwnReservation) {
+                                        ariaLabel = `Horário ${time} totalmente ocupado`;
                                     } else if (passed) {
                                         ariaLabel = `Horário ${time} indisponível`;
+                                    } else if (isOwnReservation) {
+                                        ariaLabel = `Horário ${time} — sua reserva. Clique para cancelar`;
+                                    } else if (isPartiallyOccupied) {
+                                        ariaLabel = `Horário ${time} — 1 de 2 ${type}s ocupada. Clique para reservar`;
                                     } else {
                                         ariaLabel = `Horário ${time} disponível para reserva`;
                                     }
@@ -244,7 +278,7 @@ export default function CalendarMachinePage() {
                                             key={time}
                                             open={openTime === time}
                                             onOpenChange={
-                                                (isOpen) => 
+                                                (isOpen) =>
                                                     setOpenTime(isOpen ? time : null)
                                             }
                                         >
@@ -257,12 +291,16 @@ export default function CalendarMachinePage() {
                                                     disabled={disabled}
                                                     onClick={() => setOpenTime(time)}
                                                 >
-                                                    {time}<br />
-                                                    {isOccupied ? occupiedTime?.apartment : ""}
-
-                                                    <span className="sr-only">
-                                                        {ariaLabel}
+                                                    <span className="flex flex-col items-center leading-tight">
+                                                        {time}
+                                                        {occupantText && (
+                                                            <span className={`text-xs font-normal ${occupantTextClass}`}>
+                                                                {occupantText}
+                                                            </span>
+                                                        )}
                                                     </span>
+
+                                                    <span className="sr-only">{ariaLabel}</span>
                                                 </Button>
                                             </AlertDialogTrigger>
 
@@ -272,8 +310,9 @@ export default function CalendarMachinePage() {
                                                 type={type}
                                                 dayISO={dayISO}
                                                 onClose={() => setOpenTime(null)}
-                                                reservationId={occupiedTime?.id ?? ""}
+                                                reservationId={userReservation?.id ?? ""}
                                                 isOwnReservation={isOwnReservation}
+                                                availableMachines={availableMachines}
                                             />
                                         </AlertDialog>
                                     )

@@ -1,11 +1,10 @@
-import { MachineEn } from "@/types";
 import { sendReservationEmail } from "../email/sendReservationEmail";
 
 type PublishReservationCreatedProps = {
     name: string;
     email: string;
     apartment_number: string;
-    equipment: MachineEn;
+    machine_label: string;
     startUtcIso: string;
 }
 
@@ -13,7 +12,7 @@ export async function publishReservationCreated({
     name,
     email,
     apartment_number,
-    equipment,
+    machine_label,
     startUtcIso
 }: PublishReservationCreatedProps
 ) {
@@ -25,7 +24,7 @@ export async function publishReservationCreated({
             toName,
             toEmail,
             apartment_number,
-            equipment,
+            machineLabel: machine_label,
             startUtcIso,
             type: "confirmed",
         })

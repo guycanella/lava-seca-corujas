@@ -6,31 +6,33 @@ import { MachineEn, Politeness } from "@/types";
 type CreateReservationMutationType = {
     start_time: string;
     equipment: "washer" | "dryer";
+    machine_id: string;
     dayISO: string;
     machineEnum: MachineEn;
     announce: (message: string, politeness?: Politeness) => void
     onClose?: () => void
 }
 
-type CancelReservationMutationType = 
-    Omit<CreateReservationMutationType, 
-        "start_time" 
-        | "equipment"> & {
+type CancelReservationMutationType =
+    Omit<CreateReservationMutationType,
+        "start_time"
+        | "equipment"
+        | "machine_id"> & {
     id: string;
 }
 
-type CreateReservationPayload = Pick<CreateReservationMutationType, "start_time" | "equipment">;
+type CreateReservationPayload = Pick<CreateReservationMutationType, "start_time" | "equipment" | "machine_id">;
 type UseConfirmDialogType = {
     queryClient: QueryClient;
 }
 
 export function useConfirmDialog({ queryClient }: UseConfirmDialogType) {
-    async function createReservation({ start_time, equipment }: CreateReservationPayload) {
+    async function createReservation({ start_time, equipment, machine_id }: CreateReservationPayload) {
         const res = await fetch("/api/reservations", {
             method: "POST",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ start_time, equipment }),
+            body: JSON.stringify({ start_time, equipment, machine_id }),
         });
     
         const json = await res.json();
@@ -50,7 +52,7 @@ export function useConfirmDialog({ queryClient }: UseConfirmDialogType) {
 
     const createReservationMutation = useMutation({
         mutationFn: (payload: CreateReservationMutationType) =>
-            createReservation({ start_time: payload.start_time, equipment: payload.equipment }),
+            createReservation({ start_time: payload.start_time, equipment: payload.equipment, machine_id: payload.machine_id }),
 
         onSuccess: (_, {
             dayISO,

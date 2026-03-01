@@ -19,6 +19,13 @@ export const payloadLoginSchema = z.object({
 
 const MachineSchema = z.enum(['washer', 'dryer']);
 
+export const MachineRecordSchema = z.object({
+    id: z.uuid(),
+    type: MachineSchema,
+    label: z.string(),
+    is_active: z.boolean(),
+});
+
 export const GetQuerySchema = z.object({
     day: z
         .string()
@@ -36,6 +43,7 @@ const isoDateSchema = z
 export const CreateReservationSchema = z.object({
     start_time: isoDateSchema,
     equipment: MachineSchema,
+    machine_id: z.uuid(),
 });
 
 const UsersSchema = z.object({
@@ -48,18 +56,22 @@ export const ReservationSchema = z.object({
     user_id: z.uuid(),
     apartment_id: z.uuid(),
     equipment: MachineSchema,
+    machine_id: z.uuid(),
     start_time: isoDateSchema,
     end_time: isoDateSchema,
     apartments: z.object({ number: z.string() }),
     users_app: UsersSchema,
+    machines: z.object({ id: z.uuid(), label: z.string() }),
 });
 
 export const CancelReservationSchema = z.object({
     user_id: z.uuid(),
     equipment: MachineSchema,
+    machine_id: z.uuid(),
     start_time: isoDateSchema,
     apartments: z.object({ number: z.string() }),
     users_app: UsersSchema,
+    machines: z.object({ id: z.uuid(), label: z.string() }),
 })
 
 export const ReservationArraySchema = z.array(ReservationSchema);
@@ -104,6 +116,7 @@ export type MachineEn = z.infer<typeof MachineSchema>;
 export type MachinesType = MachinePtBR | MachineEn;
 export type UsersAppType = z.infer<typeof UsersSchema>;
 export type ReservationType = z.infer<typeof ReservationSchema>;
+export type MachineRecordType = z.infer<typeof MachineRecordSchema>;
 export type UserResponseType = z.infer<typeof UserResponseSchema>;
 export type Politeness = "polite" | "assertive";
 export type ReservationEmailType = "confirmed" | "cancelled";
