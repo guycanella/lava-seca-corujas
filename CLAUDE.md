@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is "Lavandaria das Corujas" - a Next.js 15 reservation system for shared laundry equipment (washer and dryer) in an apartment complex. The application is in Brazilian Portuguese and uses the America/Sao_Paulo timezone.
+This is "Lavandaria das Corujas" - a Next.js 15 reservation system for shared laundry equipment (2 washers and 2 dryers) in an apartment complex. The application is in Brazilian Portuguese and uses the America/Sao_Paulo timezone.
 
 ## Tech Stack
 
@@ -66,7 +66,7 @@ RESERVAS_BCC=<optional-bcc-email>  # Optional BCC for all reservation emails
   - `supabaseServer()` (src/lib/supabaseServer.ts) - Server-side with service role key
 - Middleware (src/middleware.ts) protects routes: `/`, `/reservar/:path*`, `/conta`, `/admin` (configurable via matcher)
 - Public paths: `/login`, `/api/auth/callback`, `/manutencao`
-- Maintenance mode: altere a constante `MAINTENANCE_MODE` em `src/middleware.ts` para `true` e faça deploy
+- Maintenance mode: controlled by the `NEXT_PUBLIC_MAINTENANCE_MODE` environment variable (set to `"true"` and redeploy); redirects all authenticated routes to `/manutencao`
 - Redirects unauthenticated users to `/login` with `redirectTo` parameter
 - Session verification happens at middleware level using Supabase SSR cookies
 
@@ -74,7 +74,8 @@ RESERVAS_BCC=<optional-bcc-email>  # Optional BCC for all reservation emails
 
 Key entities and schemas defined in src/types/index.ts:
 - **User** (`UserResponseSchema`): id, name, email, apartment_id, apartment_number, is_admin
-- **Reservation** (`ReservationSchema`): id, user_id, apartment_id, equipment, start_time, end_time, apartments(number), users_app(name, email)
+- **Machine** (`MachineRecordSchema`): id, type ('washer'|'dryer'), label, is_active
+- **Reservation** (`ReservationSchema`): id, user_id, apartment_id, equipment, machine_id, start_time, end_time, apartments(number), users_app(name, email), machines(id, label)
 - **Apartment**: id, number
 - **Stats** (`StatsResponseSchema`): weekdayStats (array of dayOfWeek + count), userLastReservations (max 3 items with date + start_time)
 - Equipment types: `'washer' | 'dryer'` (English in DB, translated to Portuguese in UI as 'lavadora' | 'secadora')
@@ -104,16 +105,20 @@ Providers (QueryClientProvider)
 
 All routes use Zod schemas for validation and return appropriate error responses via `zodErrorResponse()`.
 
+- `GET /api/machines?type=washer|dryer` - Fetch active machines of a given type
+  - Validates query params with `GetMachinesQuerySchema`
+  - Returns array validated with `MachineRecordSchema[]`
 - `GET /api/reservations?day=YYYY-MM-DD&machine=washer|dryer` - Fetch reservations for a day/equipment
   - Validates query params with `GetQuerySchema`
   - Returns array validated with `ReservationArraySchema`
   - Converts local time to UTC using `fromZonedTime()`
 - `POST /api/reservations` - Create reservation (requires auth)
-  - Validates body with `CreateReservationSchema` (start_time, equipment)
-  - Returns 409 on conflict (duplicate reservation for time slot)
+  - Validates body with `CreateReservationSchema` (start_time, equipment, machine_id)
+  - Returns 409 on conflict (duplicate reservation for time slot + machine)
   - Returns 401 if not authenticated
 - `DELETE /api/reservations/[id]` - Delete reservation (requires auth)
   - Validates params with `DeleteReservationSchema`
+  - Returns 403 if reservation belongs to a different user, 404 if not found
 - `GET /api/user` - Get current user info
   - Returns data validated with `UserResponseSchema`
 - `GET /api/stats` - Get usage statistics (requires auth)
@@ -135,12 +140,17 @@ All routes use Zod schemas for validation and return appropriate error responses
 - Dev server runs with `TZ=America/Sao_Paulo` environment variable (set via cross-env)
 - Constant `TIME_ZONE = "America/Sao_Paulo"` used throughout
 
+**Multi-Machine Availability** (src/lib/utils.ts):
+- `MACHINES_PER_TYPE = 2` constant defines how many machines exist per type
+- `mapReservationsToTimes()` marks a time slot as unavailable only when `count >= MACHINES_PER_TYPE` (i.e., all machines of that type are booked for that slot)
+- Users select a specific machine (from `/api/machines`) when creating a reservation
+
 **Reservation Creation Flow** (src/lib/reservations/createReservation.ts):
 1. Authenticate user via Supabase
 2. Validate user has apartment_id (via getUserInformation)
 3. Calculate end_time (start + 1 hour)
-4. Insert into Supabase reservations table with unique constraint on (equipment, start_time)
-5. Handle conflicts: 23505 error code → 409 status (time slot already taken)
+4. Insert into Supabase reservations table with `machine_id` and unique constraint on (equipment, start_time, machine_id)
+5. Handle conflicts: 23505 error code → 409 status (specific machine already booked for that slot)
 6. Validate returned data with ReservationSchema
 7. Send confirmation email asynchronously (non-blocking)
 
@@ -167,9 +177,10 @@ All routes use Zod schemas for validation and return appropriate error responses
   - `toggleMachineType()` - Converts between English (washer/dryer) and Portuguese (lavadora/secadora)
   - `zodErrorResponse()` - Standardized error response for Zod validation failures
   - `formatName()` - Extracts first name from full name
-  - `mapReservationsToTimes()` - Maps reservation data to UI time slot format
+  - `mapReservationsToTimes()` - Maps reservation data to UI time slot format; a slot is unavailable when `count >= MACHINES_PER_TYPE`
   - `buildLocalTime()` - Constructs local Date from day + HH:mm string
   - `isErrorWithStatus()` - Type guard for errors with status property
+  - `MACHINES_PER_TYPE` - Constant (2) defining how many machines exist per equipment type
 
 ### Testing
 
@@ -233,17 +244,25 @@ Tables in Supabase:
 - `number` (TEXT, unique)
 - `created_at` (TIMESTAMPTZ)
 
+**machines**:
+- `id` (UUID, primary key)
+- `type` (TEXT, CHECK: 'washer' or 'dryer')
+- `label` (TEXT) - display name shown to users
+- `is_active` (BOOLEAN) - filters machines returned by `/api/machines`
+- `created_at` (TIMESTAMPTZ)
+
 **reservations**:
 - `id` (UUID, primary key)
 - `user_id` (UUID, FK to users_app)
 - `apartment_id` (UUID, FK to apartments)
 - `equipment` (TEXT, CHECK: 'washer' or 'dryer')
+- `machine_id` (UUID, FK to machines)
 - `start_time` (TIMESTAMPTZ)
 - `end_time` (TIMESTAMPTZ)
 - `created_at` (TIMESTAMPTZ)
-- **UNIQUE constraint** on (equipment, start_time) - prevents double booking
+- **UNIQUE constraint** on (equipment, start_time, machine_id) - prevents double booking the same physical machine
 
-**v_users_with_apartment** (SQL view, must be created manually in Supabase):
+**v_users_with_apartment** (SQL view, must be created manually in Supabase with `WITH (security_invoker = true)`):
 - Used by `getUserInformation()` to fetch user + apartment data in a single query
 - Returns: `id, email, name, apartment_id, apartment_number, is_admin`
 
@@ -271,7 +290,7 @@ Tables in Supabase:
 ## Development Notes
 
 - The application serves apartment residents; data is scoped to authenticated users
-- Reservation conflicts are handled at the database level (unique constraints on equipment + start_time)
+- Reservation conflicts are handled at the database level (unique constraints on equipment + start_time + machine_id)
 - Email sending failures are logged but don't fail the reservation creation
 - Machine type toggling between English (DB) and Portuguese (UI) is handled by `toggleMachineType()` utility
 - All user-facing text is in Brazilian Portuguese

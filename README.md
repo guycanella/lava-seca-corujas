@@ -104,7 +104,18 @@ RESEND_API_KEY=sua_chave_resend
 
 ### 4. Configure o banco de dados
 
-No Supabase, crie as seguintes tabelas:
+No Supabase, execute os seguintes comandos SQL no Editor de SQL para criar as tabelas e habilitar a Segurança a Nível de Linha (RLS - Row Level Security):
+
+**Tabela `apartments`:**
+```sql
+CREATE TABLE apartments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    number TEXT NOT NULL UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE apartments ENABLE ROW LEVEL SECURITY;
+```
 
 **Tabela `users_app`:**
 ```sql
@@ -115,15 +126,21 @@ CREATE TABLE users_app (
     apartment_id UUID REFERENCES apartments(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+ALTER TABLE users_app ENABLE ROW LEVEL SECURITY;
 ```
 
-**Tabela `apartments`:**
+**Tabela `machines`:**
 ```sql
-CREATE TABLE apartments (
+CREATE TABLE machines (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    number TEXT NOT NULL UNIQUE,
+    type TEXT NOT NULL CHECK (type IN ('washer', 'dryer')),
+    label TEXT NOT NULL,
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+ALTER TABLE machines ENABLE ROW LEVEL SECURITY;
 ```
 
 **Tabela `reservations`:**
@@ -133,12 +150,31 @@ CREATE TABLE reservations (
     user_id UUID NOT NULL REFERENCES users_app(id),
     apartment_id UUID NOT NULL REFERENCES apartments(id),
     equipment TEXT NOT NULL CHECK (equipment IN ('washer', 'dryer')),
+    machine_id UUID NOT NULL REFERENCES machines(id),
     start_time TIMESTAMP WITH TIME ZONE NOT NULL,
     end_time TIMESTAMP WITH TIME ZONE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(equipment, start_time)
+    UNIQUE(equipment, start_time, machine_id)
 );
+
+ALTER TABLE reservations ENABLE ROW LEVEL SECURITY;
 ```
+
+**View `v_users_with_apartment`:**
+```sql
+CREATE OR REPLACE VIEW v_users_with_apartment 
+WITH (security_invoker = true) AS
+SELECT 
+    u.id, 
+    u.email, 
+    u.name, 
+    u.apartment_id, 
+    a.number AS apartment_number, 
+    u.is_admin
+FROM users_app u
+LEFT JOIN apartments a ON u.apartment_id = a.id;
+```
+
 
 ### 5. Execute o projeto
 
