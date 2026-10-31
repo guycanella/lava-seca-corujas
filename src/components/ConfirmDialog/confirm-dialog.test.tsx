@@ -43,6 +43,20 @@ beforeEach(() => {
   global.fetch = undefined as unknown as typeof fetch;
 });
 
+const MACHINE_1 = {
+  id: "550e8400-e29b-41d4-a716-446655440001",
+  type: "washer" as const,
+  label: "Lavadora 1",
+  is_active: true,
+};
+
+const MACHINE_2 = {
+  id: "550e8400-e29b-41d4-a716-446655440002",
+  type: "washer" as const,
+  label: "Lavadora 2",
+  is_active: true,
+};
+
 // Helpers
 function setupDialog(overrides?: Partial<React.ComponentProps<typeof ConfirmDialog>>) {
   const props: React.ComponentProps<typeof ConfirmDialog> = {
@@ -53,6 +67,7 @@ function setupDialog(overrides?: Partial<React.ComponentProps<typeof ConfirmDial
     onClose: vi.fn(),
     isOwnReservation: false,
     reservationId: "",
+    availableMachines: [MACHINE_1],
     ...overrides,
   };
 
@@ -78,7 +93,7 @@ describe("ConfirmDialog (integration)", () => {
     expect(withinDlg.getByText(/Confirmar reserva/i)).toBeInTheDocument();
 
     expect(
-        withinDlg.getByText(/Reservar a lavadora para o apartamento 101 às 10:00\?/i)
+        withinDlg.getByText(/Reservar a Lavadora 1 para o apartamento 101 às 10:00\?/i)
     ).toBeInTheDocument();
 
     expect(withinDlg.getByRole("button", { name: /Cancelar/i })).toBeEnabled();
@@ -138,6 +153,7 @@ describe("ConfirmDialog (integration)", () => {
     expect(body).toMatchObject({
       start_time: "2025-10-16T13:00:00.000Z",
       equipment: "washer",
+      machine_id: MACHINE_1.id,
     });
 
     const { toast } = await import("sonner");
@@ -266,6 +282,7 @@ describe("ConfirmDialog (integration)", () => {
               onClose={vi.fn()}
               isOwnReservation={false}
               reservationId=""
+              availableMachines={[MACHINE_1]}
             />
         </AlertDialog>
       ),
@@ -280,6 +297,38 @@ describe("ConfirmDialog (integration)", () => {
         queryKey: ["reservations", "2025-10-16", "washer"],
       });
     });
+  });
+  it("lets the user pick a machine when more than one is available", async () => {
+    const user = userEvent.setup();
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ id: "ok" }),
+    } as Response);
+    global.fetch = fetchMock;
+
+    const { withinDlg } = setupDialog({ availableMachines: [MACHINE_1, MACHINE_2] });
+
+    expect(
+      withinDlg.getByText(/Reservar uma lavadora para o apartamento 101 às 10:00\?/i)
+    ).toBeInTheDocument();
+    expect(withinDlg.getByRole("radio", { name: "Lavadora 1" })).toBeChecked();
+
+    await user.click(withinDlg.getByRole("radio", { name: "Lavadora 2" }));
+    await user.click(withinDlg.getByRole("button", { name: /reservar|confirmar reserva/i }));
+
+    const postCall = await waitFor(() => {
+      const call = fetchMock.mock.calls.find(
+        ([url, init]) => String(url) === "/api/reservations" && (init as RequestInit)?.method === "POST"
+      );
+      expect(call).toBeDefined();
+      return call;
+    });
+
+    const [, reqInit] = postCall as [string, RequestInit];
+
+    expect(JSON.parse(reqInit.body as string)).toMatchObject({ machine_id: MACHINE_2.id });
   });
 });
 

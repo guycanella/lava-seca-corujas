@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 
+export const LOGOUT_MUTATION_KEY = ["logout"]
+
 export function useLogoutButton() {
     const queryClient = useQueryClient()
     const router = useRouter()
@@ -24,6 +26,7 @@ export function useLogoutButton() {
     }
 
     const { mutate: logoutMutation, isPending } = useMutation({
+        mutationKey: LOGOUT_MUTATION_KEY,
         mutationFn: logout,
 
         onSuccess: async () => {

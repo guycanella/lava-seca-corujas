@@ -4,12 +4,13 @@ import { useUser } from "@/contexts/UserContext";
 import { Skeleton } from "../ui/skeleton";
 import { formatName } from "@/lib/utils";
 import LogoutButton from "../LogoutButton/LogoutButton";
-import { useLogoutButton } from "../LogoutButton/useLogoutButton";
+import { useIsMutating } from "@tanstack/react-query";
+import { LOGOUT_MUTATION_KEY } from "../LogoutButton/useLogoutButton";
 import LoginButton from "../LoginButton/LoginButton";
 
 export function Header() {
     const { data, isLoading } = useUser()
-    const { isPending } = useLogoutButton()
+    const isPending = useIsMutating({ mutationKey: LOGOUT_MUTATION_KEY }) > 0
 
     return (
         <header
