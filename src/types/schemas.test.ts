@@ -127,6 +127,7 @@ describe("CreateReservationSchema", () => {
       const res1 = CreateReservationSchema.safeParse({
         start_time: validDateISOWithZ,
         equipment: "dryer",
+        machine_id: validUUID,
       });
 
       expect(res1.success).toBe(true);
@@ -134,6 +135,7 @@ describe("CreateReservationSchema", () => {
       const res2 = CreateReservationSchema.safeParse({
         start_time: validDateISOLocal, // without Z
         equipment: "washer",
+        machine_id: validUUID,
       });
 
       expect(res2.success).toBe(true);
@@ -166,10 +168,12 @@ describe("ReservationSchema", () => {
       user_id: validUUID,
       apartment_id: validUUID,
       equipment: "washer" as const,
+      machine_id: validUUID,
       start_time: validDateISOLocal,
       end_time: validDateISOLocal,
       apartments: { number: "101" },
       users_app: { email: "user@example.com", name: "João" },
+      machines: { id: validUUID, label: "Lavadora 1" },
     };
   
     it(" should accept a valid reservation (ISO local)", () => {
@@ -234,6 +238,7 @@ describe("UserResponseSchema", () => {
       email: "user@example.com",
       apartment_id: validUUID,
       apartment_number: "101",
+      is_admin: false,
     };
   
     it(" should accept a valid user", () => {

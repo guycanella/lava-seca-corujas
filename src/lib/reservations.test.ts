@@ -17,6 +17,8 @@ describe("mapReservationsToTimes", () => {
           apartment_id: "apt-1",
           apartments: { number: "101" },
           users_app: { name: "João Silva" },
+          machine_id: "machine-1",
+          machines: { id: "machine-1", label: "Lavadora 1" },
         } as ReservationType,
         {
           id: "2",
@@ -27,6 +29,8 @@ describe("mapReservationsToTimes", () => {
           apartment_id: "apt-2",
           apartments: { number: "202" },
           users_app: { name: "Maria Santos" },
+          machine_id: "machine-2",
+          machines: { id: "machine-2", label: "Secadora 1" },
         } as ReservationType,
     ];
 
@@ -56,6 +60,8 @@ describe("mapReservationsToTimes", () => {
       user: "João Silva",
       id: "1",
       isOwn: true,
+      machine_id: "machine-1",
+      machine_label: "Lavadora 1",
     });
   });
 
@@ -78,26 +84,22 @@ describe("getUnavailableTimes", () => {
     expect(getUnavailableTimes([])).toEqual([]);
   });
 
-  it(" should return the occupied times correctly", () => {
+  it("should not mark a time as unavailable while a machine is still free", () => {
     const mockReservations: ReservationTimes[] = [
-      { apartment: "101", time: "10:00", user: "João", id: "1", isOwn: true },
-      { apartment: "202", time: "14:00", user: "Maria", id: "2", isOwn: false },
+      { apartment: "101", time: "10:00", user: "João", id: "1", isOwn: true, machine_id: "m1", machine_label: "Lavadora 1" },
+      { apartment: "202", time: "14:00", user: "Maria", id: "2", isOwn: false, machine_id: "m2", machine_label: "Lavadora 2" },
     ];
 
-    const result = getUnavailableTimes(mockReservations);
-
-    expect(result).toEqual(["10:00", "14:00"]);
+    expect(getUnavailableTimes(mockReservations)).toEqual([]);
   });
 
-  it("should return only the times, without duplicates", () => {
+  it("should mark a time as unavailable once every machine is booked, without duplicates", () => {
     const mockReservations: ReservationTimes[] = [
-      { apartment: "101", time: "10:00", user: "João", id: "1", isOwn: true },
-      { apartment: "202", time: "10:00", user: "Maria", id: "2", isOwn: false },
+      { apartment: "101", time: "10:00", user: "João", id: "1", isOwn: true, machine_id: "m1", machine_label: "Lavadora 1" },
+      { apartment: "202", time: "10:00", user: "Maria", id: "2", isOwn: false, machine_id: "m2", machine_label: "Lavadora 2" },
+      { apartment: "303", time: "14:00", user: "Ana", id: "3", isOwn: false, machine_id: "m1", machine_label: "Lavadora 1" },
     ];
 
-    const result = getUnavailableTimes(mockReservations);
-
-    expect(result).toEqual(["10:00", "10:00"]);
-    expect(result).toHaveLength(2);
+    expect(getUnavailableTimes(mockReservations)).toEqual(["10:00"]);
   });
 });
