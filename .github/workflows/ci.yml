@@ -33,7 +33,7 @@ jobs:
         run: npm run lint
 
       - name: Typecheck
-        run: npx tsc --noEmit
+        run: npm run typecheck
 
       - name: Test with coverage
         run: npm run test:coverage -- --coverage.reporter=text --coverage.reporter=text-summary --coverage.reporter=html

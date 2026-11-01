@@ -7,6 +7,7 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "next typegen && tsc --noEmit",
     "test": "cross-env TZ=America/Sao_Paulo vitest",
     "test:watch": "cross-env TZ=America/Sao_Paulo vitest --watch",
     "test:coverage": "cross-env TZ=America/Sao_Paulo vitest run --coverage"
